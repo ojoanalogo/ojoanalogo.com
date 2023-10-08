@@ -3,7 +3,6 @@ import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import SideBar from "../components/Sidebar.astro";
-import ThemeProvider from '../components/ThemeProvider.astro';
 
 import { SITE_DESCRIPTION, SITE_TITLE } from "../config";
 
@@ -12,7 +11,6 @@ const {
   title = SITE_TITLE,
   description = SITE_DESCRIPTION,
   includeSidebar = true,
-  keepCollectionsDropdown = false,
   sideBarActiveItemID,
 } = Astro.props;
 ---
@@ -23,7 +21,6 @@ const {
     <BaseHead title={title} description={description} image={image} />
   </head>
   <body>
-    <ThemeProvider />
     <div class="bg-base-100 drawer lg:drawer-open">
       <input id="my-drawer" type="checkbox" class="drawer-toggle" />
       <div class="drawer-content bg-base-100">
@@ -35,7 +32,7 @@ const {
         </div>
         <Footer />
       </div>
-      {includeSidebar && <SideBar keepCollectionsDropdown={keepCollectionsDropdown} sideBarActiveItemID={sideBarActiveItemID} />}
+      {includeSidebar && <SideBar sideBarActiveItemID={sideBarActiveItemID} />}
     </div>
     <script is:inline src="/scripts/fslightbox.js"></script>
   </body>

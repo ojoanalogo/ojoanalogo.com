@@ -23,28 +23,3 @@ export function getFeaturedImage(fileName: string) {
       return import(`../assets/featured/${name}.jpg`);
   }
 }
-
-export function getBlogImage(slug: string, fileName: string) {
-  const filename = path.parse(fileName);
-  const name = filename.name;
-  const ext = filename.ext;
-
-  switch (ext) {
-    case ".webp":
-      return import(`../content/blog/${slug}/${name}.webp`);
-    case ".jpg":
-      return import(`../content/blog/${slug}/${name}.jpg`);
-    case ".png":
-      return import(`../content/blog/${slug}/${name}.png`);
-    case ".svg":
-      return import(`../content/blog/${slug}/${name}.svg`);
-    case ".gif":
-      return import(`../content/blog/${slug}/${name}.gif`);
-    case ".avif":
-      return import(`../content/blog/${slug}/${name}.avif`);
-    case ".jpeg":
-      return import(`../content/blog/${slug}/${name}.jpeg`);
-    default:
-      return import(`../content/blog/${slug}/${name}.jpg`);
-  }
-}

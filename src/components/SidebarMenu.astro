@@ -1,5 +1,5 @@
 ---
-const { sideBarActiveItemID, keepCollectionsDropdown } = Astro.props;
+const { sideBarActiveItemID } = Astro.props;
 const activeClass = "bg-base-300"; // For primary color replace with `active` class
 
 const collections: Array<{
@@ -20,36 +20,9 @@ const collections: Array<{
 <ul class="menu grow shrink menu-md overflow-y-auto">
   <li><a class="py-3 text-sm mt-3" id="home" href="/">Inicio</a></li>
   <li><a class="py-3 text-sm mt-3" id="collections" href="/collections">Personal</a></li>
-  <!-- <li>
-    <details open={keepCollectionsDropdown} data-umami-event="Dropdown open">
-      <summary id="dropdown-collections" class="py-3 text-sm mt-1"
-        >Colecciones</summary
-      >
-      <ul>
-        {
-          collections.map((item) => {
-            return (
-              <li>
-                <a
-                  class="py-2 text-xs mt-1 italic"
-                  id={item.id}
-                  href={item.url}
-                >
-                  {item.title}
-                  {item.new && <span class="badge badge-accent ml-2">✨</span>}
-                </a>
-              </li>
-            );
-          })
-        }
-      </ul>
-    </details>
-  </li> -->
   <li>
     <a class="py-3 text-sm mt-3" id="about" href="/about">Sobre mí</a>
   </li>
-  <!--   <li><a class="py-3 text-sm mt-3" id="blog" href="/blog/">Blog</a></li>
- -->
 </ul>
 
 <script

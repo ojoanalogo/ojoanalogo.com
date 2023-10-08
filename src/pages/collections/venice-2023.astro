@@ -4,7 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 const photos = await Astro.glob("../../assets/venice-2023/*.jpg");
 ---
 
-<BaseLayout sideBarActiveItemID="venice-2023" keepCollectionsDropdown={true}>
+<BaseLayout sideBarActiveItemID="venice-2023">
   <div class="pb-12 mt-5">
     <div class="text-3xl font-bold mb-10">🏖️ Venice beach</div>
     <Gallery photos={photos} />

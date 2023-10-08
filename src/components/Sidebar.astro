@@ -3,7 +3,7 @@ import { Picture } from "@astrojs/image/components";
 import ojo from "../assets/ojoanalogo.jpg";
 import SideBarFooter from "./SidebarFooter.astro";
 import SideBarMenu from "./SidebarMenu.astro";
-const { sideBarActiveItemID, keepCollectionsDropdown } = Astro.props;
+const { sideBarActiveItemID } = Astro.props;
 ---
 
 <div class="drawer-side z-40">
@@ -30,7 +30,6 @@ const { sideBarActiveItemID, keepCollectionsDropdown } = Astro.props;
       </div>
       <SideBarMenu
         sideBarActiveItemID={sideBarActiveItemID}
-        keepCollectionsDropdown={keepCollectionsDropdown}
       />
       <SideBarFooter />
     </div>
