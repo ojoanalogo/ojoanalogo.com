@@ -1,0 +1,46 @@
+---
+import { Picture } from "@astrojs/image/components";
+
+export interface Props {
+  photos: Array<any>;
+  newestFirst?: boolean;
+}
+
+let { photos, newestFirst = true } = Astro.props;
+
+if (newestFirst) {
+  photos.reverse();
+}
+---
+
+<div
+  class="w-full min-[2800px]:columns-8 min-[2400px]:columns-6 min-[1980px]:columns-4 lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-4"
+>
+  {
+    // flip order of array
+    photos?.map(async (photo: any) => {
+      const picture = await photo.default;
+      const fileName = picture.src.split("/").pop();
+      const photoUrl = import.meta.env.PROD
+        ? `https://ojoanalogo.com${photo.default.src}`
+        : `${photo.default.src}`;
+      return (
+        <a
+          class="cursor-pointer"
+          data-href={photoUrl}
+          data-fslightbox
+          data-umami-event="Photo click"
+          data-umami-event-photo-id={fileName}
+        >
+          <Picture
+            class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+            src={picture}
+            widths={[200, 400, 800]}
+            sizes="(max-width: 800px) 100vw, 800px"
+            alt=""
+          />
+        </a>
+      );
+    })
+  }
+</div>

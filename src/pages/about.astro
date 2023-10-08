@@ -1,0 +1,56 @@
+---
+import { Picture } from "@astrojs/image/components";
+import authorPic from "../assets/me.jpg";
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout sideBarActiveItemID="about">
+  <div class="lg:flex flex-row mt-5">
+    <div class="md:basis-2/4 sm:basis-full">
+      <Picture
+        class="mb-5 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+        src={authorPic}
+        widths={[200, 400, 800]}
+        sizes="(max-width: 800px) 100vw, 800px"
+        alt=""
+      />
+    </div>
+    <div class="md:basis-2/4 grow md:ml-10 sm:basis-full">
+      <div class="text-xl py-1">Hola 👋</div>
+      <div class="text-5xl font-bold">Soy Alfonso Reyes</div>
+      <div class="text1xl py-3 font-bold">
+        Soy un Ingeniero de software 👨🏽‍💻 y fotógrafo de vez en cuando.
+      </div>
+      <div class="py-2">
+        <p class="text-lg">
+          Mi medio favorito para tomar fotos es la fotografía análoga, pues
+          encuentro fascinante el elemento sorpresa y la paciencia que conlleva,
+          atributos que siento han estado desapareciendo a favor de experiencias
+          efímeras y breves.
+        </p>
+        <p class="text-md mt-3">
+          📷 La fotografía que encontrarás en este sitio
+          pretende ser una memoria permanente de lo que he vivido y quiero
+          compartir. Espero estas imagenes sean de tu agrado, gracias por
+          visitar mi sitio :)
+        </p>
+      </div>
+      <div class="mt-8">
+        <a
+          class="btn"
+          href="https://threads.net/@ojo.analogo"
+          target="_blank"
+        >
+          Threads.net</a
+        >
+        <a
+          href="mailto:hola@ojoanalogo.com"
+          target="_blank"
+          class="btn btn-outline ml-5"
+        >
+          Contactame
+        </a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>

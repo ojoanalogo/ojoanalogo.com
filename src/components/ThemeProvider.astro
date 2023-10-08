@@ -1,0 +1,21 @@
+---
+const isProd = import.meta.env.PROD;
+---
+
+<script is:inline define:vars={{ isProd }}>
+const root = document.documentElement;
+const storedTheme =
+	(typeof localStorage !== "undefined" && localStorage.getItem("theme")) ??
+	"pastel";
+function setTheme(theme) {
+	root.classList.toggle("pastel", theme === "pastel");
+	if (typeof localStorage !== "undefined") {
+		localStorage.setItem("theme", theme);
+	}
+	document.documentElement.setAttribute("data-theme", theme);
+}
+setTheme(storedTheme);
+root.addEventListener("theme-change", (e) => {
+	setTheme(e.detail.theme);
+});
+</script>

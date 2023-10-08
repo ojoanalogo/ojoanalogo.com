@@ -1,0 +1,42 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import SideBar from "../components/Sidebar.astro";
+import ThemeProvider from '../components/ThemeProvider.astro';
+
+import { SITE_DESCRIPTION, SITE_TITLE } from "../config";
+
+const {
+  image,
+  title = SITE_TITLE,
+  description = SITE_DESCRIPTION,
+  includeSidebar = true,
+  keepCollectionsDropdown = false,
+  sideBarActiveItemID,
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <BaseHead title={title} description={description} image={image} />
+  </head>
+  <body>
+    <ThemeProvider />
+    <div class="bg-base-100 drawer lg:drawer-open">
+      <input id="my-drawer" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content bg-base-100">
+        <Header title={SITE_TITLE} />
+        <div class="md:flex md:justify-center">
+          <main class="p-6 pt-10 sm:w-full md:w-10/12 lg:w-11/12 md:px-3">
+            <slot />
+          </main>
+        </div>
+        <Footer />
+      </div>
+      {includeSidebar && <SideBar keepCollectionsDropdown={keepCollectionsDropdown} sideBarActiveItemID={sideBarActiveItemID} />}
+    </div>
+    <script is:inline src="/scripts/fslightbox.js"></script>
+  </body>
+</html>

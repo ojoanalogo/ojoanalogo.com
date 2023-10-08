@@ -1,0 +1,10 @@
+---
+import Gallery from '../components/Gallery.astro';
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const photos = await Astro.glob("../assets/featured/*.jpg");
+---
+
+<BaseLayout sideBarActiveItemID="home">
+  <Gallery photos={photos} newestFirst={false}/>
+</BaseLayout>

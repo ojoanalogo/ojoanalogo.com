@@ -1,0 +1,26 @@
+---
+title: "Aventuras en Chinatown"
+description: "Visitamos el icónico barrio neoyorkino"
+publishDate: "Jun 19 2023"
+heroImage: "chinatown.jpg"
+published: false
+---
+
+import PostGallery from '../../../components/PostGallery.astro';
+
+export const files = [
+  "04032022-MHLab-18-UltraMax400.jpg",
+  "04032022-MHLab-16-UltraMax400.jpg",
+  "04032022-MHLab-15-UltraMax400.jpg"
+]
+
+# Hola mundo!
+
+## Como andamos
+
+<PostGallery photos={
+  [
+    ...files
+  ]
+} slug="aventuras-en-chinatown"
+/>

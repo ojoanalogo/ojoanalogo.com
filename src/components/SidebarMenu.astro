@@ -1,0 +1,63 @@
+---
+const { sideBarActiveItemID, keepCollectionsDropdown } = Astro.props;
+const activeClass = "bg-base-300"; // For primary color replace with `active` class
+
+const collections: Array<{
+  title: string;
+  id: string;
+  url: string;
+  new?: boolean;
+}> = [
+  {
+    id: 'narnia-2023',
+    title: 'Narnia',
+    url: '/narnia-2023',
+    new: true,
+  },
+  {
+    id: "guanajuato-mi-amor",
+    title: "Guanajuato mi amor",
+    url: "/guanajuato-mi-amor",
+    new: false,
+  }
+];
+---
+
+<ul class="menu grow shrink menu-md overflow-y-auto">
+  <li><a class="py-3 text-sm mt-3 italic" id="home" href="/">Inicio</a></li>
+  <li>
+    <details open={keepCollectionsDropdown} data-umami-event="Dropdown open">
+      <summary id="dropdown-collections" class="py-3 text-sm mt-1 italic"
+        >Colecciones</summary
+      >
+      <ul>
+        {
+          collections.map((item) => {
+            return (
+              <li>
+                <a class="py-2 text-xs mt-1 italic" id={item.id} href={item.url}>
+                  {item.title}
+                  {item.new && <span class="badge badge-accent ml-2">✨</span>}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </details>
+  </li>
+  <li>
+    <a class="py-3 text-sm mt-3 italic" id="about" href="/about">Sobre mí</a>
+  </li>
+  <li><a class="py-3 text-sm mt-3 italic" id="blog" href="/blog/">Blog</a></li>
+</ul>
+
+<script
+  define:vars={{
+    sideBarActiveItemID,
+    activeClass,
+  }}
+>
+const activeItemElem = document.getElementById(sideBarActiveItemID);
+activeItemElem.classList.add(activeClass);
+</script>
