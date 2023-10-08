@@ -9,25 +9,20 @@ const collections: Array<{
   new?: boolean;
 }> = [
   {
-    id: 'narnia-2023',
-    title: 'Narnia',
-    url: '/narnia-2023',
+    id: "narnia-2023",
+    title: "Narnia",
+    url: "/narnia-2023",
     new: true,
   },
-  {
-    id: "guanajuato-mi-amor",
-    title: "Guanajuato mi amor",
-    url: "/guanajuato-mi-amor",
-    new: false,
-  }
 ];
 ---
 
 <ul class="menu grow shrink menu-md overflow-y-auto">
-  <li><a class="py-3 text-sm mt-3 italic" id="home" href="/">Inicio</a></li>
-  <li>
+  <li><a class="py-3 text-sm mt-3" id="home" href="/">Inicio</a></li>
+  <li><a class="py-3 text-sm mt-3" id="collections" href="/collections">Personal</a></li>
+  <!-- <li>
     <details open={keepCollectionsDropdown} data-umami-event="Dropdown open">
-      <summary id="dropdown-collections" class="py-3 text-sm mt-1 italic"
+      <summary id="dropdown-collections" class="py-3 text-sm mt-1"
         >Colecciones</summary
       >
       <ul>
@@ -35,7 +30,11 @@ const collections: Array<{
           collections.map((item) => {
             return (
               <li>
-                <a class="py-2 text-xs mt-1 italic" id={item.id} href={item.url}>
+                <a
+                  class="py-2 text-xs mt-1 italic"
+                  id={item.id}
+                  href={item.url}
+                >
                   {item.title}
                   {item.new && <span class="badge badge-accent ml-2">✨</span>}
                 </a>
@@ -45,11 +44,12 @@ const collections: Array<{
         }
       </ul>
     </details>
-  </li>
+  </li> -->
   <li>
-    <a class="py-3 text-sm mt-3 italic" id="about" href="/about">Sobre mí</a>
+    <a class="py-3 text-sm mt-3" id="about" href="/about">Sobre mí</a>
   </li>
-  <li><a class="py-3 text-sm mt-3 italic" id="blog" href="/blog/">Blog</a></li>
+  <!--   <li><a class="py-3 text-sm mt-3" id="blog" href="/blog/">Blog</a></li>
+ -->
 </ul>
 
 <script
@@ -58,6 +58,6 @@ const collections: Array<{
     activeClass,
   }}
 >
-const activeItemElem = document.getElementById(sideBarActiveItemID);
-activeItemElem.classList.add(activeClass);
+  const activeItemElem = document.getElementById(sideBarActiveItemID);
+  activeItemElem.classList.add(activeClass);
 </script>

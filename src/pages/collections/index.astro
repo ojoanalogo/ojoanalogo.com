@@ -1,0 +1,60 @@
+---
+import { Picture } from "@astrojs/image/components";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+interface Collection {
+  title: string;
+  id: string;
+  photoCover?: string;
+}
+
+const collections: Array<Collection> = [
+  {
+    title: "Narnia",
+    id: "narnia-2023",
+    photoCover: "20231004_3_Pantera_Portra800_29",
+  },
+  {
+    title: "Venice",
+    id: "venice-2023",
+    photoCover: "20231004_3_Pantera_Portra800_04",
+  },
+  {
+    title: "Ebisuhigashi",
+    id: "ebisuhigashi-2023",
+    photoCover: "20231004_1_Pantera_Portra800_23"
+  }
+];
+---
+
+<BaseLayout sideBarActiveItemID="collections" keepCollectionsDropdown={true}>
+  <div class="pb-12 mt-5">
+    <div class="text-3xl font-bold mb-10">Mi trabajo personal</div>
+    <div class="flex flex-row">
+      <div
+        class="w-full lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-2"
+      >
+        {
+          collections.map((collection) => {
+            return (
+              <div class="stack">
+                <a class="cursor-pointer" href={"collections/" + collection.id}>
+                  <Picture
+                    class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+                    src={import(
+                      `../../assets/${collection.id}/${collection.photoCover}.jpg`
+                    )}
+                    widths={[200, 400, 800]}
+                    sizes="(max-width: 800px) 100vw, 800px"
+                    alt=""
+                  />
+                  <p class="text-xl font-light">{collection.title}</p>
+                </a>
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  </div>
+</BaseLayout>
