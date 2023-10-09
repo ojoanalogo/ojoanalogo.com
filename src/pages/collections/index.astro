@@ -22,14 +22,17 @@ const collections: Array<Collection> = [
   {
     title: "Ebisuhigashi",
     id: "ebisuhigashi-2023",
-    photoCover: "20231004_1_Pantera_Portra800_23"
-  }
+    photoCover: "20231004_1_Pantera_Portra800_23",
+  },
 ];
 ---
 
 <BaseLayout sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
-    <div class="text-3xl font-bold mb-10">Mi trabajo personal</div>
+    <div class="text-3xl font-bold mb-10">📷 Mi trabajo personal</div>
+    <p class="my-4">
+      Visita los diferentes álbumes de fotos haciendo clic en la imagen
+    </p>
     <div class="flex flex-row">
       <div
         class="w-full lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-2"
@@ -37,8 +40,11 @@ const collections: Array<Collection> = [
         {
           collections.map((collection) => {
             return (
-              <div class="stack">
-                <a class="cursor-pointer" href={"collections/" + collection.id}>
+              <div class="stack py-2">
+                <a
+                  class="cursor-pointer"
+                  href={"/collections/" + collection.id}
+                >
                   <Picture
                     class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
                     src={import(
@@ -48,7 +54,7 @@ const collections: Array<Collection> = [
                     sizes="(max-width: 800px) 100vw, 800px"
                     alt=""
                   />
-                  <p class="text-xl font-light">{collection.title}</p>
+                  <p class="text-xl font-bold my-0">{collection.title}</p>
                 </a>
               </div>
             );
