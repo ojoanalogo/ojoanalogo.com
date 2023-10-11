@@ -4,7 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 const photos = await Astro.glob("../../assets/narnia-2023/*.jpg");
 ---
 
-<BaseLayout sideBarActiveItemID="narnia-2023">
+<BaseLayout sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
     <div class="text-3xl font-bold mb-10">🏞️ Narnia</div>
     <Gallery photos={photos} />
