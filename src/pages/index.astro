@@ -4,7 +4,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 const photos = await Astro.glob("../assets/featured/*.jpg");
 
-const randomizedPhotos = photos.sort(() => Math.random() - 0.5);
+photos.sort(() => Math.random() - 0.5);
 ---
 
 <BaseLayout sideBarActiveItemID="home">
