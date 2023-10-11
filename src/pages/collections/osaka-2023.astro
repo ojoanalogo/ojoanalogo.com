@@ -6,7 +6,10 @@ const photos = await Astro.glob("../../assets/osaka-2023/*.jpg");
 
 <BaseLayout sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
-    <div class="text-3xl font-bold mb-10">🍡 Osaka</div>
+    <div class="text-3xl font-bold mb-4">🍡 Osaka</div>
+    <div class="mb-12">
+    </div>
     <Gallery photos={photos} />
   </div>
 </BaseLayout>
+

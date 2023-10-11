@@ -6,6 +6,7 @@ interface Collection {
   title: string;
   id: string;
   photoCover?: string;
+  date?: string;
 }
 
 const collections: Array<Collection> = [
@@ -39,18 +40,21 @@ const collections: Array<Collection> = [
 
 <BaseLayout sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
-    <div class="text-3xl font-bold mb-10">📷 Mi trabajo personal</div>
-    <p>
-      En esta sección encontrarás una selección de mis fotografías favoritas, si
-      deseas tener una copia impresa de alguna de ellas no dudes en contactarme
-      en
-      <a href="mailto:hola@ojoanalogo.com" class="font-bold text-slate-800" target="_blank"
-        >hola@ojoanalogo.com</a
-      > para más información.
-    </p>
-    <p class="my-4">
-      <span class="font-bold">Presiona/haz clic</span> en la imagen para ver la colección completa.
-    </p>
+
+    <div class="text-3xl font-bold mb-4">📷 Mi trabajo personal</div>
+    <div class="mb-4">
+      <p>
+        En esta sección encontrarás una selección de mis fotografías favoritas, si
+        deseas tener una copia impresa de alguna de ellas no dudes en contactarme
+        en
+        <a href="mailto:hola@ojoanalogo.com" class="font-bold text-slate-800" target="_blank"
+          >hola@ojoanalogo.com</a
+        > para más información.
+      </p>
+      <p class="my-4">
+        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver la colección completa.
+      </p>
+    </div>   
     <div class="flex flex-row">
       <div
         class="w-full lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-6"
