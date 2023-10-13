@@ -6,20 +6,14 @@ export function getAsset(route: string, fileName: string) {
   const ext = filename.ext;
   switch (ext) {
     case ".webp":
-      return import(`${route}/${name}.webp`);
+      return import(`../assets/${route}/${name}.webp`);
     case ".jpg":
-      return import(`${route}/${name}.jpg`);
+      return import(`../assets/${route}/${name}.jpg`);
     case ".png":
-      return import(`${route}/${name}.png`);
-    case ".svg":
-      return import(`${route}/${name}.svg`);
-    case ".gif":
-      return import(`${route}/${name}.gif`);
-    case ".avif":
-      return import(`${route}/${name}.avif`);
+      return import(`../assets/${route}/${name}.png`);
     case ".jpeg":
-      return import(`${route}/${name}.jpeg`);
+      return import(`../assets/${route}/${name}.jpeg`);
     default:
-      return import(`${route}/${name}.jpg`);
+      return import(`../assets/${route}/${name}.jpg`);
   }
 }
