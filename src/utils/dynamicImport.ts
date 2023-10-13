@@ -1,25 +1,25 @@
 import path from "path";
 
-export function getFeaturedImage(fileName: string) {
+export function getAsset(route: string, fileName: string) {
   const filename = path.parse(fileName);
   const name = filename.name;
   const ext = filename.ext;
   switch (ext) {
     case ".webp":
-      return import(`../assets/featured/${name}.webp`);
+      return import(`${route}/${name}.webp`);
     case ".jpg":
-      return import(`../assets/featured/${name}.jpg`);
+      return import(`${route}/${name}.jpg`);
     case ".png":
-      return import(`../assets/featured/${name}.png`);
+      return import(`${route}/${name}.png`);
     case ".svg":
-      return import(`../assets/featured/${name}.svg`);
+      return import(`${route}/${name}.svg`);
     case ".gif":
-      return import(`../assets/featured/${name}.gif`);
+      return import(`${route}/${name}.gif`);
     case ".avif":
-      return import(`../assets/featured/${name}.avif`);
+      return import(`${route}/${name}.avif`);
     case ".jpeg":
-      return import(`../assets/featured/${name}.jpeg`);
+      return import(`${route}/${name}.jpeg`);
     default:
-      return import(`../assets/featured/${name}.jpg`);
+      return import(`${route}/${name}.jpg`);
   }
 }

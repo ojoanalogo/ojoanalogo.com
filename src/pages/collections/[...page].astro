@@ -1,0 +1,120 @@
+---
+import { Picture } from 'astro:assets';
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getAsset } from "../../utils/dynamicImport";
+
+export async function getStaticPaths({ paginate }) {
+  const posts = await getCollection("collections");
+  posts.sort((a, b) => {
+    // prefeer updatedDate over publishDate if available
+    const dateA = new Date(a.data.updatedDate ?? a.data.publishDate);
+    const dateB = new Date(b.data.updatedDate ?? b.data.publishDate);
+    return dateA > dateB ? -1 : 1;
+  });
+
+  const filteredPosts = posts.filter((post) => post.data.published);
+
+  return paginate(filteredPosts, { pageSize: 15 });
+}
+
+const { page } = Astro.props;
+---
+
+<BaseLayout title="Personal" sideBarActiveItemID="collections">
+  <div class="pb-12 mt-5">
+    <div class="text-3xl font-bold mb-4">Mi trabajo personal</div>
+    <div class="mb-4">
+      <p>
+        En esta sección encontrarás una selección de mis fotografías favoritas,
+        si deseas tener una copia impresa de alguna de ellas no dudes en
+        contactarme en
+        <a
+          href="mailto:hola@ojoanalogo.com"
+          class="font-bold text-slate-800"
+          target="_blank">hola@ojoanalogo.com</a
+        > para más información.
+      </p>
+      <p class="my-4">
+        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver la
+        colección completa.
+      </p>
+    </div>
+
+    {
+      page.data.length === 0 ? (
+        <div class="text-center">
+          <h1 class="text-9xl font-bold mb-4">🏜️</h1>
+          <h1 class="text-9xl font-bold mb-4 text-zinc-800">404</h1>
+          <h3 class="text-2xl">
+            No hay publicaciones disponibles, regresa mañana
+          </h3>
+        </div>
+      ) : (
+        <div class="flex flex-row">
+          <div class="w-full lg:columns-4 md:columns-3 sm:columns-2 columns-1 gap-6">
+            {page.data.map((post) => {
+              return (
+                <div class="stack py-2">
+                  <a class="cursor-pointer" href={"/collections/" + post.slug}>
+                    <Picture
+                      class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+                      src={getAsset(
+                        `../assets/${post.slug}`,
+                        post.data.coverImage
+                      )}
+                      widths={[200, 400, 800]}
+                      sizes="(max-width: 800px) 100vw, 800px"
+                      alt=""
+                    />
+                    <p class="text-xl font-bold my-0">{post.data.title}</p>
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )
+    }
+    <div class="flex justify-between">
+      {
+        page.url.prev ? (
+          <a href={page.url.prev} class="btn my-10 mx-5">
+            {" "}
+            <svg
+              class="h-6 w-6 fill-current md:h-8 md:w-8"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              <path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+            </svg>{" "}
+            Colecciones más recientes
+          </a>
+        ) : (
+          <div />
+        )
+      }
+      {
+        page.url.next ? (
+          <a href={page.url.next} class="btn my-10 mx-5">
+            Colecciones anteriores{" "}
+            <svg
+              class="h-6 w-6 fill-current md:h-8 md:w-8"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+            >
+              {" "}
+              <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+            </svg>
+          </a>
+        ) : (
+          <div />
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

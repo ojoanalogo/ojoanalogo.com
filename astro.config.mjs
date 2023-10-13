@@ -3,13 +3,11 @@ import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
 import { defineConfig } from "astro/config";
 
-import image from "@astrojs/image";
-
 // https://astro.build/config
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [mdx(), sitemap(), tailwind(), image()],
+  integrations: [mdx(), sitemap(), tailwind()],
   site: "https://ojoanalogo.com",
   compressHTML: true,
 });
