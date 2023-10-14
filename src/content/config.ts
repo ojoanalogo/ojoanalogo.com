@@ -15,5 +15,5 @@ export type CollectionsSchema = z.infer<typeof photoCollectionsSchema>;
 const photoCollection = defineCollection({ schema: photoCollectionsSchema });
 
 export const collections = {
-  photoCollections: photoCollection,
+  collections: photoCollection,
 };
