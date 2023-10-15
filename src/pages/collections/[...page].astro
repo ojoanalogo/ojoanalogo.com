@@ -1,6 +1,8 @@
 ---
-import { Picture } from "astro:assets";
+import { Picture } from "@astrojs/image/components";
 import { getCollection } from "astro:content";
+import dayjs from "dayjs";
+import localizedFormat from "dayjs/plugin/localizedFormat";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getAsset } from "../../utils/dynamicImport";
 
@@ -36,8 +38,8 @@ const { page } = Astro.props;
         > para más información.
       </p>
       <p class="my-4">
-        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver
-        la colección completa.
+        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver la
+        colección completa.
       </p>
     </div>
 
@@ -51,72 +53,42 @@ const { page } = Astro.props;
           </h3>
         </div>
       ) : (
-        <div class="flex flex-row">
-          <div class="w-full lg:columns-4 md:columns-3 sm:columns-2 columns-1 gap-6">
-            {page.data.map((post: { data: any; slug: string }) => {
-              return (
-                <div class="relative">
-                  <div class="py-2">
-                    <a
-                      class="cursor-pointer"
-                      href={"/collections/" + post.slug}
-                    >
-                      <Picture
-                        class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
-                        src={getAsset(`${post.slug}`, post.data.coverImage)}
-                        widths={[300]}
-                        sizes="(max-width: 300px) 100vw, 300px"
-                        alt=""
-                      />
-                      <p class="text-xl font-bold my-0">{post.data.title}</p>
-                    </a>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+        <div class="w-full min-[2800px]:columns-8 min-[2400px]:columns-6 min-[1980px]:columns-4 lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-4 break-inside-avoid">
+          {page.data.map((post: { data: any; slug: string }) => {
+            dayjs.extend(localizedFormat);
+
+            const publishDateString = dayjs(post.data.publishDate).format("ll");
+
+            return (
+              <div class="mb-4">
+                <a class="cursor-pointer" href={"/collections/" + post.slug}>
+                  <figure class="break-inside-avoid relative shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300">
+                    <Picture
+                      class="w-full break-after-avoid object-cover scale-100 "
+                      src={getAsset(`${post.slug}`, post.data.coverImage)}
+                      widths={[200, 400, 800]}
+                      sizes="(max-width: 800px) 100vw, 800px"
+                      alt=""
+                    />
+                    <figcaption class="absolute bottom-0 bg-white/100 w-full px-3 py-2">
+                      <p class="text-sm md:text-lg font-bold text-black">
+                        {post.data.title}
+                      </p>
+                      <p class="text-xs text-gray-400">{publishDateString}</p>
+                    </figcaption>
+                  </figure>
+                </a>
+              </div>
+            );
+          })}
         </div>
       )
     }
-    <div class="flex justify-between">
-      {
-        page.url.prev ? (
-          <a href={page.url.prev} class="btn my-10 mx-5">
-            {" "}
-            <svg
-              class="h-6 w-6 fill-current md:h-8 md:w-8"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              <path d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
-            </svg>{" "}
-            Colecciones más recientes
-          </a>
-        ) : (
-          <div />
-        )
-      }
-      {
-        page.url.next ? (
-          <a href={page.url.next} class="btn my-10 mx-5">
-            Colecciones anteriores{" "}
-            <svg
-              class="h-6 w-6 fill-current md:h-8 md:w-8"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-            >
-              {" "}
-              <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
-            </svg>
-          </a>
-        ) : (
-          <div />
-        )
-      }
-    </div>
   </div>
 </BaseLayout>
+
+<style>
+  figure {
+    display: block;
+  }
+</style>
