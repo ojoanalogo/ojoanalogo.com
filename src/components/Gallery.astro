@@ -14,7 +14,7 @@ if (newestFirst) {
 ---
 
 <div
-  class="w-full min-[2800px]:columns-8 min-[2400px]:columns-6 min-[1980px]:columns-4 lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-4 break-inside-avoid"
+  class="w-full min-[2800px]:columns-8 min-[2400px]:columns-6 lg:columns-4 md:columns-2 sm:columns-2 columns-1 gap-4 break-inside-avoid"
 >
   {
     // flip order of array
@@ -37,8 +37,10 @@ if (newestFirst) {
             <Picture
               class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
               src={picture}
-              widths={[200, 400, 800]}
-              sizes="(max-width: 800px) 100vw, 800px"
+              widths={[200, 400, 600]}
+              loading={"eager"}
+              formats={["webp", "jpeg"]}
+              sizes="(max-width: 600px) 100vw, 600px"
               alt=""
             />
           </a>
