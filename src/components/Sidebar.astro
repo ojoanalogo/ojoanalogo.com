@@ -1,6 +1,6 @@
 ---
-import { Picture } from "@astrojs/image/components";
-import ojo from "../assets/ojoanalogo.jpg";
+import { Picture } from "astro:assets";
+import logo from "../assets/ojoanalogo.jpg";
 import SideBarFooter from "./SidebarFooter.astro";
 import SideBarMenu from "./SidebarMenu.astro";
 const { sideBarActiveItemID } = Astro.props;
@@ -20,7 +20,7 @@ const { sideBarActiveItemID } = Astro.props;
             <a target="_blank" href="https://threads.net/@ojo.analogo">
               <Picture
                 class="mask mask-circle"
-                src={ojo}
+                src={logo}
                 widths={[300]}
                 alt="Profile image`"
               />
