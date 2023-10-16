@@ -1,0 +1,29 @@
+---
+export const getPhotoGlobal = async (slug: string) => {
+  let photos: Record<string, any>[] = [];
+  switch (slug) {
+    case "tokyo-2023":
+      photos = await Astro.glob("../../assets/tokyo-2023/*.jpg");
+      break;
+    case "ebisuhigashi-2023":
+      photos = await Astro.glob("../../assets/ebisuhigashi-2023/*.jpg");
+      break;
+    case "kyoto-2023":
+      photos = await Astro.glob("../../assets/kyoto-2023/*.jpg");
+      break;
+    case "narnia-2022":
+      photos = await Astro.glob("../../assets/narnia-2022/*.jpg");
+      break;
+    case "narnia-2023":
+      photos = await Astro.glob("../../assets/narnia-2023/*.jpg");
+      break;
+    case "osaka-2023":
+      photos = await Astro.glob("../../assets/osaka-2023/*.jpg");
+      break;
+    case "venice-2023":
+      photos = await Astro.glob("../../assets/venice-2023/*.jpg");
+      break;
+  }
+  return photos;
+};
+---

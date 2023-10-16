@@ -2,6 +2,7 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import type { CollectionsSchema } from "../../content/config";
 import CollectionLayout from "../../layouts/CollectionLayout.astro";
+import { getPhotoGlobal } from './data.astro';
 
 export async function getStaticPaths() {
   const postEntries = await getCollection("collections");
@@ -19,13 +20,7 @@ const { entry } = Astro.props;
 const post: CollectionsSchema = entry.data;
 const { Content } = await entry.render();
 
-const allPhotos = await Astro.glob("../../assets/**/*.jpg");
-
-// filter photos that have the entry slug in the path
-const photos = allPhotos.filter((photo) => {
-  const slug = entry.slug;
-  return photo.default.src.includes(slug);
-});
+const photos = await getPhotoGlobal(entry.slug);
 ---
 
 <CollectionLayout
