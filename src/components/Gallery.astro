@@ -1,5 +1,5 @@
 ---
-import { Picture } from "astro:assets";
+import { Image } from "astro:assets";
 
 export interface Props {
   photos: Array<any>;
@@ -34,14 +34,14 @@ if (newestFirst) {
             data-umami-event="Photo click"
             data-umami-event-photo-id={fileName}
           >
-            <Picture
-              class="mb-4 w-full rounded-sm shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+            <Image
+              class="mb-4 w-full object-cover scale-100 break-inside-avoid shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
               src={picture}
-              widths={[200, 400, 600]}
-              loading={"eager"}
-              formats={["jpeg"]}
-              sizes="(max-width: 600px) 100vw, 600px"
+              decoding="async"
+              loading="lazy"
               alt=""
+              quality={"mid"}
+              width={picture.width / 2}
             />
           </a>
         </div>

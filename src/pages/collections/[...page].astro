@@ -1,5 +1,5 @@
 ---
-import { Picture } from "astro:assets";
+import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
@@ -38,8 +38,8 @@ const { page } = Astro.props;
         > para más información.
       </p>
       <p class="my-4">
-        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver la
-        colección completa.
+        <span class="font-bold">Presiona/haz clic</span> en la imagen para ver
+        la colección completa.
       </p>
     </div>
 
@@ -54,21 +54,20 @@ const { page } = Astro.props;
         </div>
       ) : (
         <div class="w-full min-[2800px]:columns-8 min-[2400px]:columns-6 min-[1980px]:columns-4 lg:columns-3 md:columns-2 sm:columns-2 columns-1 gap-4 break-inside-avoid">
-          {page.data.map((post: { data: any; slug: string }) => {
+          {page.data.map(async (post: { data: any; slug: string }) => {
             dayjs.extend(localizedFormat);
-
             const publishDateString = dayjs(post.data.publishDate).format("ll");
-
             return (
               <div class="mb-4">
                 <a class="cursor-pointer" href={"/collections/" + post.slug}>
                   <figure class="break-inside-avoid relative shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300">
-                    <Picture
-                      class="w-full break-after-avoid object-cover scale-100 "
+                    <Image
+                      class="w-full break-after-avoid object-cover scale-100  shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
                       src={getAsset(`${post.slug}`, post.data.coverImage)}
-                      widths={[200, 400, 800]}
-                      sizes="(max-width: 800px) 100vw, 800px"
+                      decoding="async"
+                      loading="lazy"
                       alt=""
+                      quality={"mid"}
                     />
                     <figcaption class="absolute bottom-0 bg-white/100 w-full px-3 py-2">
                       <p class="text-sm md:text-lg font-bold text-black">
