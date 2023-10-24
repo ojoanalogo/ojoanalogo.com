@@ -4,6 +4,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 const photos = await Astro.glob("../assets/featured/*.jpg");
 
+const shufflePhotos = false;
+if (shufflePhotos)
 photos.sort(() => Math.random() - 0.5);
 ---
 
