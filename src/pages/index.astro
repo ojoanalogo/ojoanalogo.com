@@ -4,11 +4,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 
 const photos = await Astro.glob("../assets/featured/*.jpg");
 
-const shufflePhotos = false;
+const shufflePhotos = true;
 if (shufflePhotos)
 photos.sort(() => Math.random() - 0.5);
 ---
 
 <BaseLayout sideBarActiveItemID="home">
-  <Gallery photos={photos} newestFirst={false}/>
+  <Gallery photos={photos} newestFirst={true}/>
 </BaseLayout>
