@@ -35,6 +35,9 @@ export const getPhotoGlobal = async (slug: string) => {
     case "ukraine-rally-2022":
       photos = await Astro.glob("../../assets/ukraine-rally-2022/*.jpg");
       break;
+    case "newyork-2022":
+      photos = await Astro.glob("../../assets/newyork-2022/*.jpg");
+      break;
   }
   return photos;
 };
