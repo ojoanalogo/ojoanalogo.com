@@ -18,7 +18,7 @@ export const getPhotoGlobal = async (slug: string) => {
       photos = await Astro.glob("../../assets/narnia-2023/*.jpg");
       break;
     case "osaka-2023":
-      photos = await Astro.glob("../../assets/osaka-2023/*.jpg");
+      photos = (await Astro.glob("../../assets/osaka-2023/*.jpg")).reverse();
       break;
     case "venice-2023":
       photos = await Astro.glob("../../assets/venice-2023/*.jpg");
@@ -33,10 +33,10 @@ export const getPhotoGlobal = async (slug: string) => {
       photos = (await Astro.glob("../../assets/guanajuato-2023/*.jpg")).reverse();
       break;
     case "ukraine-rally-2022":
-      photos = await Astro.glob("../../assets/ukraine-rally-2022/*.jpg");
+      photos = (await Astro.glob("../../assets/ukraine-rally-2022/*.jpg")).reverse();
       break;
     case "newyork-2022":
-      photos = await Astro.glob("../../assets/newyork-2022/*.jpg");
+      photos = (await Astro.glob("../../assets/newyork-2022/*.jpg")).reverse();
       break;
   }
   return photos;
