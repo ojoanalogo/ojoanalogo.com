@@ -4,26 +4,44 @@ import { Image } from "astro:assets";
 export interface Props {
   photos: Array<any>;
   newestFirst?: boolean;
+  biggerPictures?: boolean;
 }
 
-let { photos, newestFirst = true } = Astro.props;
+let { photos, newestFirst = true, biggerPictures = false } = Astro.props;
 
 if (newestFirst) {
   photos.reverse();
 }
 
-const classList = [
-  "min-[2800px]:columns-8",
-  "min-[2400px]:columns-7",
-  "min-[2100px]:columns-6",
-  "min-[1980px]:columns-5",
-  "lg:columns-4",
-  "md:columns-3",
-  "sm:columns-2",
-  "columns-1",
-  "gap-4",
-  "break-inside-avoid"
-];
+let classList: Array<string>;
+
+if (biggerPictures) {
+  classList = [
+    "min-[2800px]:columns-7",
+    "min-[2400px]:columns-6",
+    "min-[2100px]:columns-5",
+    "min-[1980px]:columns-4",
+    "lg:columns-3",
+    "md:columns-3",
+    "sm:columns-2",
+    "columns-1",
+    "gap-4",
+    "break-inside-avoid",
+  ];
+} else {
+  classList = [
+    "min-[2800px]:columns-8",
+    "min-[2400px]:columns-7",
+    "min-[2100px]:columns-6",
+    "min-[1980px]:columns-5",
+    "lg:columns-4",
+    "md:columns-3",
+    "sm:columns-2",
+    "columns-1",
+    "gap-4",
+    "break-inside-avoid",
+  ];
+}
 ---
 
 <div class={`w-full ${classList.join(" ")}`}>
