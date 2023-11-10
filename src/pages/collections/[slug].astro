@@ -1,6 +1,5 @@
 ---
 import { getCollection, type CollectionEntry } from "astro:content";
-import { SITE_TITLE } from '../../config';
 import type { CollectionsSchema } from "../../content/config";
 import CollectionLayout from "../../layouts/CollectionLayout.astro";
 import { getPhotoGlobal } from './data.astro';
@@ -25,11 +24,10 @@ const photos = await getPhotoGlobal(entry.slug);
 
 const featuredPhoto = await import(`../../assets/${entry.slug}/${entry.data.coverImage}.jpg`);
 
-const title = `${SITE_TITLE} - ${post.title}`;
 ---
 
 <CollectionLayout
-  title={title}
+  title={post.title}
   description={post.description}
   publishDate={post.publishDate}
   updatedDate={post.updatedDate}

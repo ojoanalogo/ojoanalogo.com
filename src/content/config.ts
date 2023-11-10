@@ -2,7 +2,7 @@ import { defineCollection, z } from "astro:content";
 
 const photoCollectionsSchema = z.object({
   title: z.string(),
-  description: z.string(),
+  description: z.string().optional(),
   publishDate: z.coerce.date(),
   updatedDate: z.coerce.date().optional(),
   coverImage: z.string().optional(),

@@ -2,6 +2,7 @@
 import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import Gallery from "../components/Gallery.astro";
+import { SITE_TITLE } from '../config';
 import BaseLayout from "./BaseLayout.astro";
 
 export interface Props {
@@ -23,7 +24,7 @@ if (updatedDate) {
 }
 ---
 
-<BaseLayout title={title} description={description} socialImagePath={socialImagePath} sideBarActiveItemID="collections">
+<BaseLayout title={`${SITE_TITLE} - ${title}`} description={description} socialImagePath={socialImagePath} sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
     <div class="text-3xl font-bold mb-1">{title}</div>
     <p class="text-sm text-gray-700">
