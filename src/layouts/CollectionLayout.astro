@@ -8,11 +8,12 @@ export interface Props {
   title: string;
   description: string;
   publishDate: Date;
-  updatedDate?: Date;
+  socialImagePath: string;
   photos: Record<string, any>[];
+  updatedDate?: Date;
 }
 
-const { title, publishDate, updatedDate, photos } = Astro.props;
+const { title, publishDate, updatedDate, photos, description, socialImagePath } = Astro.props;
 dayjs.extend(localizedFormat);
 
 const publishDateString = dayjs(publishDate).format("ll");
@@ -22,7 +23,7 @@ if (updatedDate) {
 }
 ---
 
-<BaseLayout sideBarActiveItemID="collections">
+<BaseLayout title={title} description={description} socialImagePath={socialImagePath} sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
     <div class="text-3xl font-bold mb-1">{title}</div>
     <p class="text-sm text-gray-700">
