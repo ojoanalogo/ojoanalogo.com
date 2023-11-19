@@ -5,8 +5,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout sideBarActiveItemID="about">
-  <div class="lg:flex flex-row mt-5">
-    <div class="md:basis-3/4 sm:basis-full">
+  <div class="flex flex-col md:flex-row mt-5 items-center">
+    <div class="md:basis-2/4 sm:basis-full">
       <Picture
         class="mb-5 w-full rounded-lg shadow-lg object-cover scale-100 hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
         src={authorPic}
@@ -37,7 +37,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </div>
       <div class="mt-8">
         <a
-          class="btn"
+          class="btn uppercase"
           href="https://threads.net/@ojo.analogo"
           target="_blank"
         >
@@ -46,7 +46,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <a
           href="mailto:hola@ojoanalogo.com"
           target="_blank"
-          class="btn btn-outline ml-5"
+          class="btn btn-outline uppercase ml-5"
         >
           Contactame
         </a>

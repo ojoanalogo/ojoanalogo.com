@@ -62,7 +62,7 @@ const { page } = Astro.props;
                 <a class="cursor-pointer" href={"/collections/" + post.slug}>
                   <figure class="relative shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300">
                     <Image
-                      class="w-full object-cover scale-100  shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+                      class="w-full object-cover scale-100 shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
                       src={getAsset(`${post.slug}`, post.data.coverImage)}
                       decoding="async"
                       loading="lazy"
@@ -73,7 +73,18 @@ const { page } = Astro.props;
                       <p class="text-sm md:text-lg font-bold text-black">
                         {post.data.title}
                       </p>
-                      <p class="text-xs text-gray-400">{publishDateString}</p>
+                      <div class="flex flex-row justify-stretch">
+                        <div class="text-xs text-gray-400 grow">{publishDateString}</div>
+                        <div class="text-xs mx-2">
+                        {
+                          post.data.tags?.map((tag: string) => {
+                            return (
+                              <span class="badge badge-sm gap-1">{tag}</span>
+                            );
+                          })
+                        }
+                        </div>
+                      </div>
                     </figcaption>
                   </figure>
                 </a>
