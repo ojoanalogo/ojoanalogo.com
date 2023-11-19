@@ -1,6 +1,6 @@
 ---
 title: "Espacios Liminales"
-description: "Lugares con puertas hacía ningún lado"
+description: "Una colección de sitios con puertas que te llevan a la nada"
 publishDate: "November 14 2023"
 coverImage: "DSCF1986"
 published: true
