@@ -6,7 +6,8 @@ import localizedFormat from "dayjs/plugin/localizedFormat";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { getAsset } from "../../utils/dynamicImport";
 
-export async function getStaticPaths({ paginate }) {
+export async function getStaticPaths(params: { paginate: any }) {
+  const { paginate } = params;
   const posts = await getCollection("collections");
   posts.sort((a, b) => {
     // prefeer updatedDate over publishDate if available
@@ -20,10 +21,16 @@ export async function getStaticPaths({ paginate }) {
   return paginate(filteredPosts, { pageSize: 15 });
 }
 
+interface Props {
+  page: {
+    data: any;
+  };
+}
+
 const { page } = Astro.props;
 ---
 
-<BaseLayout title="Personal" sideBarActiveItemID="collections">
+<BaseLayout title="Galería" sideBarActiveItemID="collections">
   <div class="pb-12 mt-5">
     <div class="text-3xl font-bold mb-4">Mi trabajo personal</div>
     <div class="mb-4">
@@ -73,16 +80,18 @@ const { page } = Astro.props;
                       <p class="text-sm md:text-lg font-bold text-black">
                         {post.data.title}
                       </p>
-                      <div class="flex flex-row justify-stretch">
-                        <div class="text-xs text-gray-400 grow">{publishDateString}</div>
-                        <div class="text-xs mx-2">
-                        {
-                          post.data.tags?.map((tag: string) => {
+                      <div class="flex flex-row align-middle items-center">
+                        <div class="text-xs text-gray-400 grow">
+                          {publishDateString}
+                        </div>
+                        <div class="text-xs">
+                          {post.data.tags?.map((tag: string) => {
                             return (
-                              <span class="badge badge-sm gap-1">{tag}</span>
+                              <span class="text-gray-600 text-xs">
+                                {"#" + tag}
+                              </span>
                             );
-                          })
-                        }
+                          })}
                         </div>
                       </div>
                     </figcaption>

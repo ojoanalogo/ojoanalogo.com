@@ -5,6 +5,7 @@ publishDate: "November 14 2023"
 coverImage: "DSCF1986"
 published: true
 tags: [
-  "Digital"
+  "digital",
+  "x100f",
 ]
 ---
