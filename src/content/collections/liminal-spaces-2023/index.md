@@ -1,6 +1,6 @@
 ---
 title: "Espacios Liminales"
-description: "Una colección de sitios con puertas que te llevan a la nada"
+description: "Luces difusas en el vacío, instantes suspendidos en espacios liminales nocturnos"
 publishDate: "November 14 2023"
 coverImage: "DSCF1986"
 published: true

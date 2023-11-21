@@ -41,6 +41,9 @@ export const getPhotoGlobal = async (slug: string) => {
       case "liminal-spaces-2023":
       photos = (await Astro.glob("../../assets/liminal-spaces-2023/*.jpg"));
       break;
+      case "revolucion-desfile-2023":
+      photos = (await Astro.glob("../../assets/revolucion-desfile-2023/*.jpg"));
+      break;
   }
   return photos;
 };
