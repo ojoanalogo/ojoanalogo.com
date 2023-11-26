@@ -32,8 +32,10 @@ if (updatedDate) {
   updatedDateString = dayjs(updatedDate).format("ll");
 }
 
-const filmPhotos = photos.filter((photo) => photo.default.src.includes("film"));
-const digitalPhotos = photos.filter((photo) =>
+const filmPhotos = photos?.filter((photo) =>
+  photo?.default?.src?.includes("film")
+);
+const digitalPhotos = photos?.filter((photo) =>
   photo.default.src.includes("digital")
 );
 ---

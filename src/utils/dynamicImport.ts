@@ -6,14 +6,14 @@ export function getAsset(route: string, fileName: string) {
   const ext = filename.ext;
   switch (ext) {
     case ".webp":
-      return import(`../assets/${route}/${name}.webp`);
+      return import(`../content/collections/${route}/assets/${name}.webp`);
     case ".jpg":
-      return import(`../assets/${route}/${name}.jpg`);
+      return import(`../content/collections/${route}/assets/${name}.jpg`);
     case ".png":
-      return import(`../assets/${route}/${name}.png`);
+      return import(`../content/collections/${route}/assets/${name}.png`);
     case ".jpeg":
-      return import(`../assets/${route}/${name}.jpeg`);
+      return import(`../content/collections/${route}/assets/${name}.jpeg`);
     default:
-      return import(`../assets/${route}/${name}.jpg`);
+      return import(`../content/collections/${route}/assets/${name}.jpg`);
   }
 }
