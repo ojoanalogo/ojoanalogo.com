@@ -10,7 +10,7 @@ export const getPhotoGlobal = async (slug: string) => {
     case "ebisuhigashi-2023":
       return {
         film: await Astro.glob(
-          "../content/collections/toebisuhigashikyo-2023/assets/*.jpg"
+          "../content/collections/ebisuhigashi-2023/assets/*.jpg"
         ),
       };
     case "kyoto-2023":
@@ -49,7 +49,6 @@ export const getPhotoGlobal = async (slug: string) => {
           "../content/collections/mercado-culiacan-2023/assets/*.jpg"
         ),
       };
-      break;
     case "sueños-pastel-2023":
       return {
         film: await Astro.glob(
