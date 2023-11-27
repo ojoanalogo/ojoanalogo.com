@@ -2,7 +2,7 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import type { CollectionsSchema } from "../../content/config";
 import CollectionLayout from "../../layouts/CollectionLayout.astro";
-import { getPhotoGlobal } from '../../utils/data.astro';
+import { getPhotoGlobal } from "../../utils/data.astro";
 
 export async function getStaticPaths() {
   const postEntries = await getCollection("collections");
@@ -20,10 +20,14 @@ const { entry } = Astro.props;
 const post: CollectionsSchema = entry.data;
 const { Content } = await entry.render();
 
-const photos = await getPhotoGlobal(entry.slug);
+const photos: {
+  film?: Record<string, any>[],
+  digital?: Record<string, any>[]
+} | undefined = await getPhotoGlobal(entry.slug.toString()) ?? undefined;
 
-const featuredPhoto = await import(`../../content/collections/${entry.slug}/assets/${entry.data.coverImage}.jpg`);
-
+const featuredPhoto = await import(
+  `../../content/collections/${entry.slug}/assets/${entry.data.coverImage}.jpg`
+);
 ---
 
 <CollectionLayout

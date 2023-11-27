@@ -9,7 +9,10 @@ export interface Props {
   title: string;
   publishDate: Date;
   socialImagePath: string;
-  photos: Record<string, any>[];
+  photos: {
+    film?: Record<string, unknown>[];
+    digital?: Record<string, unknown>[];
+  } | undefined;
   updatedDate?: Date;
   description?: string;
   tags?: string[];
@@ -31,13 +34,6 @@ let updatedDateString;
 if (updatedDate) {
   updatedDateString = dayjs(updatedDate).format("ll");
 }
-
-const filmPhotos = photos?.filter((photo) =>
-  photo?.default?.src?.includes("film")
-);
-const digitalPhotos = photos?.filter((photo) =>
-  photo.default.src.includes("digital")
-);
 ---
 
 <BaseLayout
@@ -68,28 +64,36 @@ const digitalPhotos = photos?.filter((photo) =>
     <div class="mb-4 mt-4">
       <slot />
     </div>
-
     {
-      filmPhotos?.length > 0 && (
-        <div class="mb-4">
-          <h2 class="text-2xl font-bold mb-2">Film</h2>
-          <Gallery photos={filmPhotos} biggerPictures={false} />
+      photos?.film && photos?.digital && (
+        <div>
+          <div class="mb-4">
+            <h2 class="text-2xl font-bold mb-2">Film</h2>
+            <Gallery photos={photos.film} biggerPictures={false} />
+          </div>
+          <div class="mb-4">
+            <h2 class="text-2xl font-bold mb-2">Digital</h2>
+            <Gallery photos={photos.digital} biggerPictures={false} />
+          </div>
         </div>
       )
     }
     {
-      digitalPhotos?.length > 0 && (
+      photos?.digital && photos.digital?.length > 0 && !photos.film && (
         <div class="mb-4">
-          <h2 class="text-2xl font-bold mb-2">Digital</h2>
-          <Gallery photos={digitalPhotos} biggerPictures={false} />
+          <Gallery photos={photos.digital} biggerPictures={true} />
         </div>
       )
     }
     {
-      ((filmPhotos?.length === 0 &&
-        digitalPhotos?.length === 0 &&
-        photos?.length === 0) ||
-        photos.length === 0) && (
+      photos?.film && photos.film?.length > 0 && !photos.digital && (
+        <div class="mb-4">
+          <Gallery photos={photos.film} biggerPictures={true} />
+        </div>
+      )
+    }
+    {
+      photos?.digital?.length === 0 && photos.film?.length === 0 && (
         <div class="text-center text-gray-700">
           <p class="text-5xl mb-12">🔍</p>
           <p class="text-lg">
@@ -99,11 +103,6 @@ const digitalPhotos = photos?.filter((photo) =>
             </a>
           </p>
         </div>
-      )
-    }
-    {
-      photos.length > 0 && !filmPhotos?.length && !digitalPhotos.length && (
-        <Gallery photos={photos} biggerPictures={true} />
       )
     }
   </div>

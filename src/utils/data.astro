@@ -1,50 +1,98 @@
 ---
 export const getPhotoGlobal = async (slug: string) => {
-  let photos: Record<string, any>[] = [];
   switch (slug) {
     case "tokyo-2023":
-      photos = await Astro.glob("../content/collections/tokyo-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/tokyo-2023/assets/*.jpg"
+        ),
+      };
     case "ebisuhigashi-2023":
-      photos = await Astro.glob("../content/collections/ebisuhigashi-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/toebisuhigashikyo-2023/assets/*.jpg"
+        ),
+      };
     case "kyoto-2023":
-      photos = await Astro.glob("../content/collections/kyoto-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/kyoto-2023/assets/*.jpg"
+        ),
+      };
     case "narnia-2022":
-      photos = await Astro.glob("../content/collections/narnia-2022/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/narnia-2022/assets/*.jpg"
+        ),
+      };
     case "narnia-2023":
-      photos = await Astro.glob("../content/collections/narnia-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/narnia-2023/assets/*.jpg"
+        ),
+      };
     case "osaka-2023":
-      photos = (await Astro.glob("../content/collections/osaka-2023/assets/*.jpg")).reverse();
-      break;
+      return {
+        film: (
+          await Astro.glob("../content/collections/osaka-2023/assets/*.jpg")
+        ).reverse(),
+      };
     case "venice-2023":
-      photos = await Astro.glob("../content/collections/venice-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/venice-2023/assets/*.jpg"
+        ),
+      };
     case "mercado-culiacan-2023":
-      photos = await Astro.glob("../content/collections/mercado-culiacan-2023/assets/*.jpg");
+      return {
+        film: await Astro.glob(
+          "../content/collections/mercado-culiacan-2023/assets/*.jpg"
+        ),
+      };
       break;
     case "sueños-pastel-2023":
-      photos = await Astro.glob("../content/collections/sueños-pastel-2023/assets/*.jpg");
-      break;
+      return {
+        film: await Astro.glob(
+          "../content/collections/sueños-pastel-2023/assets/*.jpg"
+        ),
+      };
     case "guanajuato-2023":
-      photos = (await Astro.glob("../content/collections/guanajuato-2023/assets/*.jpg")).reverse();
-      break;
+      return {
+        film: (
+          await Astro.glob(
+            "../content/collections/guanajuato-2023/assets/*.jpg"
+          )
+        ).reverse(),
+      };
     case "ukraine-rally-2022":
-      photos = (await Astro.glob("../content/collections/ukraine-rally-2022/assets/*.jpg")).reverse();
-      break;
+      return {
+        film: (
+          await Astro.glob(
+            "../content/collections/ukraine-rally-2022/assets/*.jpg"
+          )
+        ).reverse(),
+      };
     case "newyork-2022":
-      photos = (await Astro.glob("../content/collections/newyork-2022/assets/*.jpg")).reverse();
-      break;
+      return {
+        film: (
+          await Astro.glob("../content/collections/newyork-2022/assets/*.jpg")
+        ).reverse(),
+      };
     case "liminal-spaces-2023":
-      photos = await Astro.glob("../content/collections/liminal-spaces-2023/assets/*.jpg");
-      break;
+      return {
+        digital: await Astro.glob(
+          "../content/collections/liminal-spaces-2023/assets/*.jpg"
+        ),
+      };
     case "revolucion-desfile-2023":
-      photos = await Astro.glob("../content/collections/revolucion-desfile-2023/assets/**/*.jpg");
-      break;
+      return {
+        digital: await Astro.glob(
+          "../content/collections/revolucion-desfile-2023/assets/digital/*.jpg"
+        ),
+        film: await Astro.glob(
+          "../content/collections/revolucion-desfile-2023/assets/film/*.jpg"
+        ),
+      };
   }
-  return photos;
 };
 ---
