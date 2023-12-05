@@ -1,5 +1,5 @@
 ---
-title: "Ebisuhigashi"
+title: "Ebisuhigashi, Osaka"
 description: "Una tarde en el colorido barrio de Osaka"
 publishDate: "October 10 2023"
 updatedDate: "October 12 2023"

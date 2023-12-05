@@ -1,9 +1,8 @@
 ---
 title: "Tokyo"
-description: "Visitando la histórica ciudad de Kyoto"
+description: ""
 publishDate: "September 22 2023"
-coverImage: "20231004_2_Pantera_Portra800_26"
+coverImage: "20231129-MHLab-CineStill800T-24"
 published: true
 ---
 
-🚧 En construcción
