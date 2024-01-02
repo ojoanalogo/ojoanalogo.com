@@ -2,6 +2,10 @@
 module.exports = {
   content: ["./src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue}"],
   theme: {
+    fontFamily: {
+      display: ["Source Serif Pro", "Georgia", "serif"],
+      body: ["Synonym", "system-ui", "sans-serif"],
+    },
     extend: {
       width: {
         px: "960px",
@@ -10,6 +14,6 @@ module.exports = {
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: ["garden"],
+    themes: ["light"],
   },
 };

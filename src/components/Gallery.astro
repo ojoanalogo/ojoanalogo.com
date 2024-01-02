@@ -5,50 +5,53 @@ export interface Props {
   photos: Array<any>;
   newestFirst?: boolean;
   biggerPictures?: boolean;
+  isMainPage?: boolean;
 }
 
-let { photos, newestFirst = true, biggerPictures = false } = Astro.props;
+let {
+  photos,
+  newestFirst = true,
+  biggerPictures = false,
+  isMainPage = false,
+} = Astro.props;
 
 if (newestFirst) {
   photos.reverse();
 }
 
-let classList: Array<string>;
+export let classList: Array<string>;
 
-if (biggerPictures) {
-  classList = [
-    "min-[2800px]:columns-7",
-    "min-[2400px]:columns-6",
-    "min-[2100px]:columns-5",
-    "min-[1980px]:columns-4",
-    "lg:columns-3",
-    "md:columns-3",
-    "sm:columns-2",
-    "columns-1",
-    "gap-4",
-    "md:gap-6",
-    "lg:gap-8",
-    "break-inside-avoid",
-  ];
-} else {
-  classList = [
-    "min-[2800px]:columns-8",
-    "min-[2400px]:columns-7",
-    "min-[2100px]:columns-6",
-    "min-[1980px]:columns-5",
-    "lg:columns-4",
-    "md:columns-3",
-    "sm:columns-2",
-    "columns-1",
-    "gap-4",
-    "md:gap-6",
-    "lg:gap-8",
-    "break-inside-avoid",
-  ];
-}
+classList = biggerPictures
+  ? [
+      "min-[2800px]:columns-7",
+      "min-[2400px]:columns-6",
+      "min-[2100px]:columns-5",
+      "min-[1980px]:columns-4",
+      "lg:columns-3",
+      "md:columns-2",
+      "columns-1",
+      "gap-4",
+      "md:gap-6",
+      "lg:gap-8",
+      "break-inside-avoid",
+    ]
+  : [
+      "min-[2800px]:columns-8",
+      "min-[2400px]:columns-7",
+      "min-[2100px]:columns-6",
+      "min-[1980px]:columns-5",
+      "lg:columns-4",
+      "md:columns-3",
+      "sm:columns-2",
+      "columns-1",
+      "gap-4",
+      "md:gap-6",
+      "lg:gap-8",
+      "break-inside-avoid",
+    ];
 ---
 
-<div class={`w-full ${classList.join(" ")}`}>
+<div class={classList.join(" ")}>
   {
     photos?.map(async (photo: any) => {
       const picture = await photo.default;
@@ -57,6 +60,7 @@ if (biggerPictures) {
       const lightboxPhotoUrl = import.meta.env.PROD
         ? `https://ojoanalogo.com${photo.default.src}`
         : `${photo.default.src}`;
+
       return (
         <div class="break-inside-avoid">
           <a
@@ -67,7 +71,7 @@ if (biggerPictures) {
             data-umami-event-photo-id={fileName}
           >
             <Image
-              class="mb-4 w-full object-cover scale-100 shadow-lg hover:shadow-2xl hover:shadow-black/40 ease-in duration-300"
+              class="mb-4 w-full object-cover scale-100 hover:shadow-md ease-in duration-300"
               src={picture}
               decoding="async"
               loading="lazy"

@@ -6,12 +6,12 @@ import SideBarMenu from "./SidebarMenu.astro";
 const { sideBarActiveItemID } = Astro.props;
 ---
 
-<div class="drawer-side drop-shadow-xl shadow-md">
+<div class="drawer-side">
   <label for="my-drawer" class="drawer-overlay"></label>
   <aside
-    class="px-2 pt-2 h-auto min-h-full w-[14rem] bg-base-200 text-base-content flex flex-col"
+    class="px-2 pt-2 h-auto min-h-full w-[14rem] text-base-content flex flex-col"
   >
-    <div class="m-auto">
+    <div class="mx-auto my-8">
       <div class="w-fit mx-auto mt-5 mb-2">
         <div
           class="avatar transition ease-in-out hover:scale-[102%] flex items-center justify-center"
@@ -27,10 +27,9 @@ const { sideBarActiveItemID } = Astro.props;
             </a>
           </div>
         </div>
-        <p class="font-bold text-2xl mt-4 text-slate-800 text-center">
+        <p class="font-bold text-md mt-4 text-slate-800 text-center">
           Alfonso Reyes
         </p>
-        <p class="text-sm text-slate-600 text-center">galería personal</p>
       </div>
       <SideBarMenu sideBarActiveItemID={sideBarActiveItemID} />
       <SideBarFooter />
