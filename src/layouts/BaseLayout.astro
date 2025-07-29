@@ -2,7 +2,6 @@
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-import SideBar from "../components/Sidebar.astro";
 
 import { SITE_DESCRIPTION, SITE_TITLE } from "../config";
 
@@ -10,30 +9,29 @@ const {
   socialImagePath,
   title = SITE_TITLE,
   description = SITE_DESCRIPTION,
-  includeSidebar = true,
-  sideBarActiveItemID,
+  navbarActiveItemID,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="es">
+<html
+  lang="es"
+  class="bg-beige-50 text-neutral-800 selection:bg-beige-200 selection:text-neutral-900 h-full"
+>
   <head>
-    <BaseHead title={title} description={description} socialImagePath={socialImagePath} />
+    <BaseHead
+      title={title}
+      description={description}
+      socialImagePath={socialImagePath}
+    />
   </head>
-  <body>
-    <div class="bg-base-100 drawer lg:drawer-open">
-      <input id="my-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content bg-base-100">
-        <Header title={SITE_TITLE} />
-        <div class="md:flex md:justify-center">
-          <main class="p-6 md:px-16 pt-10 w-full">
-            <slot />
-          </main>
-        </div>
-        <Footer />
-      </div>
-      {includeSidebar && <SideBar sideBarActiveItemID={sideBarActiveItemID} />}
-    </div>
-    <script is:inline src="/scripts/fslightbox.js"></script>
+  <body
+    class="w-full font-body font-light tracking-wide min-h-screen flex flex-col"
+  >
+    <Header title={SITE_TITLE} navbarActiveItemID={navbarActiveItemID} />
+    <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col">
+      <slot />
+    </main>
+    <Footer />
   </body>
 </html>

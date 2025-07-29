@@ -1,17 +1,329 @@
-<div
-  class="sticky lg:hidden top-0 z-30 flex h-16 w-full justify-center bg-opacity-90 backdrop-blur transition-all duration-100 bg-base-100 text-base-content shadow-sm"
+---
+const { title, navbarActiveItemID } = Astro.props;
+const activeClasses = ["text-white", "opacity-100"];
+
+interface NavLink {
+  title: string;
+  id?: string;
+  url?: string;
+  new?: boolean;
+  redirect?: string;
+  children?: Array<{
+    title: string;
+    url: string;
+    id?: string;
+  }>;
+}
+
+const links: Array<NavLink> = [
+  {
+    title: "inicio",
+    id: "home",
+    url: "/",
+  },
+  {
+    title: "galería",
+    id: "gallery",
+    children: [
+      {
+        title: "Narnia",
+        url: "/narnia",
+        id: "works-narnia",
+      },
+      {
+        title: "Japón",
+        url: "/japan",
+        id: "works-japan",
+      },
+      {
+        title: "Cows",
+        url: "/cows",
+        id: "works-cows",
+      },
+    ],
+  },
+  {
+    title: "sitio web personal",
+    redirect: "https://alfon.so",
+  },
+];
+---
+
+<header
+  id="main-header"
+  class="xl:w-[55rem] lg:w-4/5 w-full p-4 px-8 md:h-20 mx-auto flex flex-col md:flex-row md:items-center md:justify-between relative"
 >
-  <div class="navbar">
-    <div class="navbar-start">
-      <label for="my-drawer" class="btn btn-square btn-ghost">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current"
-          ><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
-      </label>
-    </div>
-    <div class="navbar-center">
-      <a class="btn btn-ghost normal-case text-xl" href="/">Alfonso Reyes</a>
-    </div>
-    <div class="navbar-end"></div>
+  <div class="mb-2 flex items-center justify-between w-full md:w-auto">
+    <a href="/" target="_self" class="text-zinc-800 font-display text-xl">
+      {title}
+    </a>
+    <!-- Mobile menu button -->
+    <button
+      id="mobile-menu-button"
+      class="md:hidden flex flex-col items-center justify-center w-8 h-8 space-y-1.5 focus:outline-none"
+      aria-label="Toggle mobile menu"
+    >
+      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
+      ></span>
+      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
+      ></span>
+      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
+      ></span>
+    </button>
   </div>
-</div>
+
+  <!-- Desktop Navigation -->
+  <nav
+    id="navigation-menu"
+    aria-label="Main menu"
+    class="hidden md:block w-full md:w-auto"
+  >
+    <div class="flex flex-wrap gap-6 text-sm font-light">
+      {
+        links.map((link) => {
+          if (link.children) {
+            return (
+              <div class="relative group">
+                <button
+                  class="text-gray-700 opacity-80 hover:opacity-100 transition-opacity duration-200 flex items-center gap-1"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {link.title}
+                  <svg
+                    class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  class="absolute top-full left-0 mt-2 w-48 bg-beige-50 border-beige-300
+                  rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                  transition-all duration-200 z-50 border"
+                >
+                  <div class="py-1">
+                    {link.children.map((child) => (
+                      <a
+                        href={child.url}
+                        id={child.id}
+                        class="block px-4 py-2 text-sm text-beige-900 hover:bg-beige-200 hover:text-beige-900 transition-colors duration-150"
+                      >
+                        {child.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <a
+                href={link.redirect ? link.redirect : link.url}
+                target={link.redirect ? "_blank" : "_self"}
+                id={link.id}
+                class="text-gray-700 opacity-80 hover:opacity-100 transition-opacity duration-200"
+              >
+                {link.title}
+              </a>
+            );
+          }
+        })
+      }
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation Overlay -->
+  <div
+    id="mobile-menu-overlay"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 opacity-0 invisible transition-all duration-300 md:hidden"
+  >
+  </div>
+
+  <!-- Mobile Navigation Menu -->
+  <nav
+    id="mobile-menu"
+    class="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white z-50 transform translate-x-full transition-transform duration-300 md:hidden shadow-xl"
+  >
+    <div class="flex flex-col h-full">
+      <!-- Mobile menu header -->
+      <div
+        class="flex items-center justify-between p-6 border-b border-gray-200"
+      >
+        <span class="text-lg font-medium text-zinc-800">{title}</span>
+        <button
+          id="mobile-menu-close"
+          class="w-8 h-8 flex items-center justify-center focus:outline-none"
+          aria-label="Close mobile menu"
+        >
+          <svg
+            class="w-6 h-6 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile menu content -->
+      <div class="flex-1 overflow-y-auto py-4">
+        {
+          links.map((link) => {
+            if (link.children) {
+              return (
+                <div class="mobile-dropdown">
+                  <button
+                    class="mobile-dropdown-toggle flex items-center justify-between w-full px-6 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                    aria-expanded="false"
+                  >
+                    <span>{link.title}</span>
+                    <svg
+                      class="mobile-dropdown-icon w-5 h-5 transition-transform duration-200"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div class="mobile-dropdown-content max-h-0 overflow-hidden transition-all duration-300 bg-gray-50">
+                    {link.children.map((child) => (
+                      <a
+                        href={child.url}
+                        id={child.id}
+                        class="block px-10 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-150"
+                      >
+                        {child.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <a
+                  href={link.redirect ? link.redirect : link.url}
+                  target={link.redirect ? "_blank" : "_self"}
+                  id={link.id}
+                  class="block px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                >
+                  {link.title}
+                </a>
+              );
+            }
+          })
+        }
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script
+  define:vars={{
+    navbarActiveItemID,
+    activeClasses,
+  }}
+>
+  // Apply active classes to current page
+  if (navbarActiveItemID) {
+    const activeItemElement = document.getElementById(navbarActiveItemID);
+    if (activeItemElement) {
+      activeClasses.forEach((activeClass) => {
+        activeItemElement.classList.add(activeClass);
+      });
+    }
+  }
+
+  // Mobile menu functionality
+  const mobileMenuButton = document.getElementById("mobile-menu-button");
+  const mobileMenu = document.getElementById("mobile-menu");
+  const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+  const mobileMenuClose = document.getElementById("mobile-menu-close");
+
+  function openMobileMenu() {
+    mobileMenu.classList.remove("translate-x-full");
+    mobileMenuOverlay.classList.remove("opacity-0", "invisible");
+    document.body.style.overflow = "hidden";
+
+    // Animate hamburger to X
+    const spans = mobileMenuButton.querySelectorAll("span");
+    spans[0].style.transform = "rotate(45deg) translate(5px, 5px)";
+    spans[1].style.opacity = "0";
+    spans[2].style.transform = "rotate(-45deg) translate(7px, -6px)";
+  }
+
+  function closeMobileMenu() {
+    mobileMenu.classList.add("translate-x-full");
+    mobileMenuOverlay.classList.add("opacity-0", "invisible");
+    document.body.style.overflow = "";
+
+    // Reset hamburger
+    const spans = mobileMenuButton.querySelectorAll("span");
+    spans[0].style.transform = "";
+    spans[1].style.opacity = "";
+    spans[2].style.transform = "";
+  }
+
+  mobileMenuButton.addEventListener("click", openMobileMenu);
+  mobileMenuClose.addEventListener("click", closeMobileMenu);
+  mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+
+  // Handle mobile dropdown toggles
+  const mobileDropdownToggles = document.querySelectorAll(
+    ".mobile-dropdown-toggle",
+  );
+
+  mobileDropdownToggles.forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      const dropdown = toggle.closest(".mobile-dropdown");
+      const content = dropdown.querySelector(".mobile-dropdown-content");
+      const icon = dropdown.querySelector(".mobile-dropdown-icon");
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+
+      if (isOpen) {
+        content.style.maxHeight = "0";
+        icon.style.transform = "";
+        toggle.setAttribute("aria-expanded", "false");
+      } else {
+        content.style.maxHeight = content.scrollHeight + "px";
+        icon.style.transform = "rotate(180deg)";
+        toggle.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+
+  // Close mobile menu on window resize to desktop
+  window.addEventListener("resize", () => {
+    if (window.innerWidth >= 768) {
+      closeMobileMenu();
+    }
+  });
+
+  // Handle escape key to close mobile menu
+  document.addEventListener("keydown", (e) => {
+    if (
+      e.key === "Escape" &&
+      !mobileMenu.classList.contains("translate-x-full")
+    ) {
+      closeMobileMenu();
+    }
+  });
+</script>

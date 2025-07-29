@@ -1,6 +1,6 @@
 import { defineCollection, z } from "astro:content";
 
-const photoCollectionsSchema = z.object({
+const blogSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   publishDate: z.coerce.date(),
@@ -10,10 +10,23 @@ const photoCollectionsSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
-export type CollectionsSchema = z.infer<typeof photoCollectionsSchema>;
+const gallerySchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  slug: z.string().optional(),
+  date: z.coerce.date().optional(),
+});
 
-const photoCollection = defineCollection({ schema: photoCollectionsSchema });
+export type CollectionsSchema = z.infer<typeof blogSchema>;
+export type GallerySchema = z.infer<typeof gallerySchema>;
+
+const blogCollection = defineCollection({ schema: blogSchema });
+const galleryCollection = defineCollection({
+  schema: gallerySchema,
+  type: 'content'
+});
 
 export const collections = {
-  collections: photoCollection,
+  blog: blogCollection,
+  gallery: galleryCollection,
 };

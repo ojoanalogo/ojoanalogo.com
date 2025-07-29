@@ -1,14 +1,15 @@
 ---
-import Gallery from '../components/Gallery.astro';
+import CarouselGallery from "../components/CarouselGallery.astro";
+import { getFeaturedPhotos } from "../data/featured";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const photos = await Astro.glob("../assets/featured/*.jpg");
-
-const shufflePhotos = false;
-if (shufflePhotos)
-photos.sort(() => Math.random() - 0.5);
+const photos = getFeaturedPhotos();
 ---
 
 <BaseLayout sideBarActiveItemID="home">
-  <Gallery photos={photos} isMainPage={true} newestFirst={false}/>
+  <div class="flex-grow flex items-center justify-center py-4">
+    <div class="w-full max-w-[95%] lg:max-w-[90%] xl:max-w-[85%] mx-auto">
+      <CarouselGallery photos={photos} randomize={true} />
+    </div>
+  </div>
 </BaseLayout>
