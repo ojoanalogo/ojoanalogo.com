@@ -65,15 +65,22 @@ const links: Array<NavLink> = [
     <!-- Mobile menu button -->
     <button
       id="mobile-menu-button"
-      class="md:hidden flex flex-col items-center justify-center w-8 h-8 space-y-1.5 focus:outline-none"
+      class="md:hidden flex items-center justify-center w-8 h-8 focus:outline-none"
       aria-label="Toggle mobile menu"
     >
-      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
-      ></span>
-      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
-      ></span>
-      <span class="block w-6 h-0.5 bg-zinc-800 transition-all duration-300"
-      ></span>
+      <svg
+        class="w-6 h-6 text-zinc-800/40"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
     </button>
   </div>
 
@@ -247,7 +254,46 @@ const links: Array<NavLink> = [
     activeClasses,
   }}
 >
+  // Cache DOM elements to avoid repeated queries
+  let mobileMenuElements = null;
+
+  function getMobileMenuElements() {
+    if (!mobileMenuElements) {
+      mobileMenuElements = {
+        button: document.getElementById("mobile-menu-button"),
+        menu: document.getElementById("mobile-menu"),
+        overlay: document.getElementById("mobile-menu-overlay"),
+        close: document.getElementById("mobile-menu-close"),
+      };
+    }
+    return mobileMenuElements;
+  }
+
+
+  function setMobileMenuState(isOpen = false) {
+    const { menu, overlay } = getMobileMenuElements();
+    if (!menu || !overlay) return;
+
+    if (isOpen) {
+      menu.classList.remove("translate-x-full");
+      overlay.classList.remove("opacity-0", "invisible");
+      document.body.style.overflow = "hidden";
+    } else {
+      menu.classList.add("translate-x-full");
+      overlay.classList.add("opacity-0", "invisible");
+      document.body.style.overflow = "";
+    }
+  }
+
+  function isMobileMenuOpen() {
+    const { menu } = getMobileMenuElements();
+    return menu && !menu.classList.contains("translate-x-full");
+  }
+
   function initializeHeader() {
+    // Reset cache on page load
+    mobileMenuElements = null;
+
     // Apply active classes to current page
     if (navbarActiveItemID) {
       const activeItemElement = document.getElementById(navbarActiveItemID);
@@ -258,166 +304,63 @@ const links: Array<NavLink> = [
       }
     }
 
-    // Mobile menu functionality
-    const mobileMenuButton = document.getElementById("mobile-menu-button");
-    const mobileMenu = document.getElementById("mobile-menu");
-    const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
-    const mobileMenuClose = document.getElementById("mobile-menu-close");
+    // Initialize mobile menu state
+    setMobileMenuState(false);
 
-    function openMobileMenu() {
-      // Check if elements exist and are accessible
-      if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
-
-      mobileMenu.classList.remove("translate-x-full");
-      mobileMenuOverlay.classList.remove("opacity-0", "invisible");
-      document.body.style.overflow = "hidden";
-
-      // Animate hamburger to X
-      const spans = mobileMenuButton.querySelectorAll("span");
-      if (spans.length >= 3) {
-        spans[0].style.transform = "rotate(45deg) translate(5px, 5px)";
-        spans[1].style.opacity = "0";
-        spans[2].style.transform = "rotate(-45deg) translate(7px, -6px)";
-      }
-    }
-
-    function closeMobileMenu() {
-      // Check if elements exist and are accessible
-      if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
-
-      mobileMenu.classList.add("translate-x-full");
-      mobileMenuOverlay.classList.add("opacity-0", "invisible");
-      document.body.style.overflow = "";
-
-      // Reset hamburger
-      const spans = mobileMenuButton.querySelectorAll("span");
-      if (spans.length >= 3) {
-        spans[0].style.transform = "";
-        spans[1].style.opacity = "";
-        spans[2].style.transform = "";
-      }
-    }
-
-    // Initialize mobile menu state on page load
-    function initializeMobileMenu() {
-      // Ensure menu starts in closed state
-      if (mobileMenu && mobileMenuOverlay) {
-        mobileMenu.classList.add("translate-x-full");
-        mobileMenuOverlay.classList.add("opacity-0", "invisible");
-        document.body.style.overflow = "";
-
-        // Reset hamburger button to initial state
-        if (mobileMenuButton) {
-          const spans = mobileMenuButton.querySelectorAll("span");
-          if (spans.length >= 3) {
-            spans[0].style.transform = "";
-            spans[1].style.opacity = "";
-            spans[2].style.transform = "";
-          }
-        }
-      }
-    }
-
-    // Initialize on page load
-    initializeMobileMenu();
-
-    // Add event listeners with null checks
-    if (mobileMenuButton) {
-      mobileMenuButton.addEventListener("click", openMobileMenu);
-    }
-    if (mobileMenuClose) {
-      mobileMenuClose.addEventListener("click", closeMobileMenu);
-    }
-    if (mobileMenuOverlay) {
-      mobileMenuOverlay.addEventListener("click", closeMobileMenu);
-    }
+    // Add event listeners
+    const { button, close, overlay } = getMobileMenuElements();
+    
+    button?.addEventListener("click", () => setMobileMenuState(true));
+    close?.addEventListener("click", () => setMobileMenuState(false));
+    overlay?.addEventListener("click", () => setMobileMenuState(false));
   }
 
-  // Use event delegation for mobile dropdown toggles to prevent duplicate listeners
+  // Mobile dropdown toggle handler (using event delegation)
   document.addEventListener("click", (e) => {
-    const target = e.target;
-    if (target.closest && target.closest(".mobile-dropdown-toggle")) {
-      const toggle = target.closest(".mobile-dropdown-toggle");
-      const dropdown = toggle.closest(".mobile-dropdown");
-      const content = dropdown?.querySelector(".mobile-dropdown-content");
-      const icon = dropdown?.querySelector(".mobile-dropdown-icon");
-      const isOpen = toggle.getAttribute("aria-expanded") === "true";
+    const toggle = e.target.closest?.(".mobile-dropdown-toggle");
+    if (!toggle) return;
 
-      if (content && icon) {
-        if (isOpen) {
-          content.style.maxHeight = "0";
-          icon.style.transform = "";
-          toggle.setAttribute("aria-expanded", "false");
-        } else {
-          content.style.maxHeight = content.scrollHeight + "px";
-          icon.style.transform = "rotate(180deg)";
-          toggle.setAttribute("aria-expanded", "true");
-        }
-      }
+    const dropdown = toggle.closest(".mobile-dropdown");
+    const content = dropdown?.querySelector(".mobile-dropdown-content");
+    const icon = dropdown?.querySelector(".mobile-dropdown-icon");
+    const isOpen = toggle.getAttribute("aria-expanded") === "true";
+
+    if (content && icon) {
+      const newState = !isOpen;
+      content.style.maxHeight = newState ? `${content.scrollHeight}px` : "0";
+      icon.style.transform = newState ? "rotate(180deg)" : "";
+      toggle.setAttribute("aria-expanded", newState.toString());
     }
   });
 
-  // Close mobile menu on window resize to desktop (set up once)
+  // Close mobile menu on desktop resize (debounced)
   let resizeTimeout;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
-      if (window.innerWidth >= 768) {
-        const mobileMenu = document.getElementById("mobile-menu");
-        const mobileMenuButton = document.getElementById("mobile-menu-button");
-        const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
-        
-        if (mobileMenu && mobileMenuOverlay && mobileMenuButton) {
-          // Force close mobile menu and reset button state
-          mobileMenu.classList.add("translate-x-full");
-          mobileMenuOverlay.classList.add("opacity-0", "invisible");
-          document.body.style.overflow = "";
-
-          // Ensure hamburger button is reset to initial state
-          const spans = mobileMenuButton.querySelectorAll("span");
-          if (spans.length >= 3) {
-            spans[0].style.transform = "";
-            spans[1].style.opacity = "";
-            spans[2].style.transform = "";
-          }
-        }
+      if (window.innerWidth >= 768 && isMobileMenuOpen()) {
+        setMobileMenuState(false);
       }
-    }, 150); // Debounce resize events
+    }, 150);
   });
 
-  // Handle escape key to close mobile menu (set up once)
+  // Close mobile menu on Escape key
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      const mobileMenu = document.getElementById("mobile-menu");
-      const mobileMenuButton = document.getElementById("mobile-menu-button");
-      const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
-      
-      if (mobileMenu && !mobileMenu.classList.contains("translate-x-full")) {
-        if (mobileMenuOverlay && mobileMenuButton) {
-          mobileMenu.classList.add("translate-x-full");
-          mobileMenuOverlay.classList.add("opacity-0", "invisible");
-          document.body.style.overflow = "";
-
-          // Reset hamburger
-          const spans = mobileMenuButton.querySelectorAll("span");
-          if (spans.length >= 3) {
-            spans[0].style.transform = "";
-            spans[1].style.opacity = "";
-            spans[2].style.transform = "";
-          }
-        }
-      }
+    if (e.key === "Escape" && isMobileMenuOpen()) {
+      setMobileMenuState(false);
     }
   });
 
-  // Initialize on page load and after view transitions
-  document.addEventListener("astro:page-load", initializeHeader);
-  
-  // Initialize on DOM ready for first page load
-  if (document.readyState === 'loading') {
-    document.addEventListener("DOMContentLoaded", initializeHeader);
-  } else {
-    // DOM is already ready, initialize immediately
-    initializeHeader();
+  // Initialize based on document state
+  function setupInitialization() {
+    if (document.readyState === 'loading') {
+      document.addEventListener("DOMContentLoaded", initializeHeader);
+    } else {
+      initializeHeader();
+    }
   }
+
+  // Handle Astro page transitions and initial load
+  document.addEventListener("astro:page-load", initializeHeader);
+  setupInitialization();
 </script>

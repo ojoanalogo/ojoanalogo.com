@@ -93,6 +93,8 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Autoplay, EffectFade, Keyboard, Navigation } from "swiper/modules";
 
+  let swiperInstance: any = null;
+
   const shuffleArray = (array: any[]) => {
     for (let i = array.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -100,78 +102,79 @@ import { Autoplay, EffectFade, Keyboard, Navigation } from "swiper/modules";
     }
   };
 
-  const shuffleSlides = (swiperContainer: HTMLElement) => {
-    const wrapper = swiperContainer.querySelector('.swiper-wrapper');
-    const slides = Array.from(wrapper?.children || []);
-    
-    // Shuffle the slides array
+  const shuffleSlides = (container: HTMLElement) => {
+    const wrapper = container.querySelector('.swiper-wrapper');
+    if (!wrapper) return;
+
+    const slides = Array.from(wrapper.children);
     shuffleArray(slides);
     
-    // Remove all slides and re-append in new order
-    slides.forEach(slide => wrapper?.removeChild(slide));
-    slides.forEach(slide => wrapper?.appendChild(slide));
+    // Re-append in new order
+    slides.forEach(slide => wrapper.appendChild(slide));
   };
 
-  let swiperInstance: any = null;
-
-  const initSwiper = () => {
-    
-    // Destroy existing swiper instance if it exists
+  const destroySwiper = () => {
     if (swiperInstance) {
       swiperInstance.destroy(true, true);
       swiperInstance = null;
     }
+  };
+
+  const createSwiperConfig = (counterEl: Element | null) => ({
+    modules: [EffectFade, Navigation, Autoplay, Keyboard],
+    effect: "fade",
+    fadeEffect: { crossFade: true },
+    speed: 800,
+    allowTouchMove: true,
+    loop: true,
+    autoplay: {
+      delay: 8000,
+      disableOnInteraction: true,
+    },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
+    keyboard: { enabled: true },
+    on: {
+      slideChange: (swiper: any) => {
+        if (counterEl) {
+          counterEl.textContent = (swiper.realIndex + 1).toString();
+        }
+      },
+    },
+  });
+
+  const initSwiper = () => {
+    destroySwiper();
     
     const swiperContainer = document.querySelector(".showcase-swiper") as HTMLElement;
     if (!swiperContainer) return;
     
-    const shouldRandomize = swiperContainer?.dataset.randomize === 'true';
-    
-    // Randomize slides before initializing swiper if requested
-    if (shouldRandomize && swiperContainer) {
+    // Handle randomization
+    if (swiperContainer.dataset.randomize === 'true') {
       shuffleSlides(swiperContainer);
     }
     
     const counterEl = document.querySelector(".current-slide");
-
-    swiperInstance = new Swiper(".showcase-swiper", {
-      modules: [EffectFade, Navigation, Autoplay, Keyboard],
-      effect: "fade",
-      fadeEffect: {
-        crossFade: true,
-      },
-      speed: 800,
-      allowTouchMove: true,
-      loop: true,
-      autoplay: {
-        delay: 8000,
-        disableOnInteraction: true,
-      },
-      navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-      },
-      keyboard: {
-        enabled: true,
-      },
-      on: {
-        slideChange: function (swiper) {
-          if (counterEl) {
-            counterEl.textContent = (swiper.realIndex + 1).toString();
-          }
-        },
-      },
-    });
+    swiperInstance = new Swiper(".showcase-swiper", createSwiperConfig(counterEl));
   };
 
-  // Initialize swiper on page load and after view transitions
-  document.addEventListener("astro:page-load", initSwiper);
-  
-  // Also initialize on DOMContentLoaded for compatibility
-  document.addEventListener("DOMContentLoaded", initSwiper);
-  
-  // Re-initialize on window load for better compatibility
-  window.addEventListener("load", initSwiper);
+  // Single initialization handler that covers all cases
+  const setupSwiperInitialization = () => {
+    // Handle Astro page transitions
+    document.addEventListener("astro:page-load", initSwiper);
+    
+    // Handle initial page load
+    if (document.readyState === 'loading') {
+      document.addEventListener("DOMContentLoaded", initSwiper);
+    } else {
+      // DOM already ready, initialize immediately
+      initSwiper();
+    }
+  };
+
+  setupSwiperInitialization();
 </script>
 
 
