@@ -331,19 +331,19 @@ const links: Array<NavLink> = [
     if (mobileMenuOverlay) {
       mobileMenuOverlay.addEventListener("click", closeMobileMenu);
     }
+  }
 
-    // Handle mobile dropdown toggles
-    const mobileDropdownToggles = document.querySelectorAll(
-      ".mobile-dropdown-toggle",
-    );
+  // Use event delegation for mobile dropdown toggles to prevent duplicate listeners
+  document.addEventListener("click", (e) => {
+    const target = e.target;
+    if (target.closest && target.closest(".mobile-dropdown-toggle")) {
+      const toggle = target.closest(".mobile-dropdown-toggle");
+      const dropdown = toggle.closest(".mobile-dropdown");
+      const content = dropdown?.querySelector(".mobile-dropdown-content");
+      const icon = dropdown?.querySelector(".mobile-dropdown-icon");
+      const isOpen = toggle.getAttribute("aria-expanded") === "true";
 
-    mobileDropdownToggles.forEach((toggle) => {
-      toggle.addEventListener("click", () => {
-        const dropdown = toggle.closest(".mobile-dropdown");
-        const content = dropdown.querySelector(".mobile-dropdown-content");
-        const icon = dropdown.querySelector(".mobile-dropdown-icon");
-        const isOpen = toggle.getAttribute("aria-expanded") === "true";
-
+      if (content && icon) {
         if (isOpen) {
           content.style.maxHeight = "0";
           icon.style.transform = "";
@@ -353,45 +353,71 @@ const links: Array<NavLink> = [
           icon.style.transform = "rotate(180deg)";
           toggle.setAttribute("aria-expanded", "true");
         }
-      });
-    });
+      }
+    }
+  });
 
-    // Close mobile menu on window resize to desktop
-    let resizeTimeout;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (window.innerWidth >= 768) {
+  // Close mobile menu on window resize to desktop (set up once)
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (window.innerWidth >= 768) {
+        const mobileMenu = document.getElementById("mobile-menu");
+        const mobileMenuButton = document.getElementById("mobile-menu-button");
+        const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+        
+        if (mobileMenu && mobileMenuOverlay && mobileMenuButton) {
           // Force close mobile menu and reset button state
-          closeMobileMenu();
+          mobileMenu.classList.add("translate-x-full");
+          mobileMenuOverlay.classList.add("opacity-0", "invisible");
+          document.body.style.overflow = "";
 
           // Ensure hamburger button is reset to initial state
-          if (mobileMenuButton) {
-            const spans = mobileMenuButton.querySelectorAll("span");
-            if (spans.length >= 3) {
-              spans[0].style.transform = "";
-              spans[1].style.opacity = "";
-              spans[2].style.transform = "";
-            }
+          const spans = mobileMenuButton.querySelectorAll("span");
+          if (spans.length >= 3) {
+            spans[0].style.transform = "";
+            spans[1].style.opacity = "";
+            spans[2].style.transform = "";
           }
         }
-      }, 150); // Debounce resize events
-    });
-
-    // Handle escape key to close mobile menu
-    document.addEventListener("keydown", (e) => {
-      if (
-        e.key === "Escape" &&
-        !mobileMenu.classList.contains("translate-x-full")
-      ) {
-        closeMobileMenu();
       }
-    });
-  }
+    }, 150); // Debounce resize events
+  });
+
+  // Handle escape key to close mobile menu (set up once)
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const mobileMenu = document.getElementById("mobile-menu");
+      const mobileMenuButton = document.getElementById("mobile-menu-button");
+      const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+      
+      if (mobileMenu && !mobileMenu.classList.contains("translate-x-full")) {
+        if (mobileMenuOverlay && mobileMenuButton) {
+          mobileMenu.classList.add("translate-x-full");
+          mobileMenuOverlay.classList.add("opacity-0", "invisible");
+          document.body.style.overflow = "";
+
+          // Reset hamburger
+          const spans = mobileMenuButton.querySelectorAll("span");
+          if (spans.length >= 3) {
+            spans[0].style.transform = "";
+            spans[1].style.opacity = "";
+            spans[2].style.transform = "";
+          }
+        }
+      }
+    }
+  });
 
   // Initialize on page load and after view transitions
   document.addEventListener("astro:page-load", initializeHeader);
   
-  // Also initialize immediately for first page load
-  initializeHeader();
+  // Initialize on DOM ready for first page load
+  if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initializeHeader);
+  } else {
+    // DOM is already ready, initialize immediately
+    initializeHeader();
+  }
 </script>
