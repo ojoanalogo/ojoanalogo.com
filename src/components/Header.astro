@@ -83,7 +83,7 @@ const links: Array<NavLink> = [
     aria-label="Main menu"
     class="hidden md:block w-full md:w-auto"
   >
-    <div class="flex flex-wrap gap-6 text-sm font-light">
+    <div class="flex flex-wrap gap-6 text-base font-light">
       {
         links.map((link) => {
           if (link.children) {
@@ -266,7 +266,7 @@ const links: Array<NavLink> = [
   function openMobileMenu() {
     // Check if elements exist and are accessible
     if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
-    
+
     mobileMenu.classList.remove("translate-x-full");
     mobileMenuOverlay.classList.remove("opacity-0", "invisible");
     document.body.style.overflow = "hidden";
@@ -283,7 +283,7 @@ const links: Array<NavLink> = [
   function closeMobileMenu() {
     // Check if elements exist and are accessible
     if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
-    
+
     mobileMenu.classList.add("translate-x-full");
     mobileMenuOverlay.classList.add("opacity-0", "invisible");
     document.body.style.overflow = "";
@@ -304,7 +304,7 @@ const links: Array<NavLink> = [
       mobileMenu.classList.add("translate-x-full");
       mobileMenuOverlay.classList.add("opacity-0", "invisible");
       document.body.style.overflow = "";
-      
+
       // Reset hamburger button to initial state
       if (mobileMenuButton) {
         const spans = mobileMenuButton.querySelectorAll("span");
@@ -316,7 +316,7 @@ const links: Array<NavLink> = [
       }
     }
   }
-  
+
   // Initialize on page load
   initializeMobileMenu();
 
@@ -363,7 +363,7 @@ const links: Array<NavLink> = [
       if (window.innerWidth >= 768) {
         // Force close mobile menu and reset button state
         closeMobileMenu();
-        
+
         // Ensure hamburger button is reset to initial state
         if (mobileMenuButton) {
           const spans = mobileMenuButton.querySelectorAll("span");
