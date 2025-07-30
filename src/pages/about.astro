@@ -5,52 +5,84 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout sideBarActiveItemID="about">
-  <div class="flex flex-col md:flex-row mt-5 items-center">
-    <div class="md:basis-2/4 sm:basis-full">
-      <Picture
-        class="mb-5 w-full rounded-lg shadow-lg object-cover scale-100 hover:shadow-2xl ease-in duration-300"
-        src={authorPic}
-        widths={[200, 400, 600]}
-        sizes="(max-width: 600px) 100vw, 600px"
-        alt=""
-      />
-    </div>
-    <div class="md:basis-2/4 grow md:ml-10 sm:basis-full">
-      <div class="text-xl py-1">Hola 👋</div>
-      <div class="text-5xl font-bold">Soy Alfonso Reyes</div>
-      <div class="text1xl py-3 font-bold">
-        Soy un Ingeniero de software 👨🏽‍💻 y fotógrafo de vez en cuando.
-      </div>
-      <div class="py-2">
-        <p class="text-lg">
-          Mi medio favorito para tomar fotos es la fotografía análoga, pues
-          encuentro fascinante el elemento sorpresa y la paciencia que conlleva,
-          atributos que siento han estado desapareciendo a favor de experiencias
-          efímeras y breves.
-        </p>
-        <p class="text-md mt-3">
-          📷 La fotografía que encontrarás en este sitio
-          pretende ser una memoria permanente de lo que he vivido y quiero
-          compartir. Espero estas imagenes sean de tu agrado, gracias por
-          visitar mi sitio :)
-        </p>
-      </div>
-      <div class="mt-8">
-        <a
-          class="btn uppercase"
-          href="https://threads.net/@ojo.analogo"
-          target="_blank"
-        >
-          Threads.net</a
-        >
-        <a
-          href="mailto:hola@ojoanalogo.com"
-          target="_blank"
-          class="btn btn-outline uppercase ml-5"
-        >
-          Contactame
-        </a>
-      </div>
+  <div class="flex-1 flex items-center justify-center min-h-0">
+    <div class="max-w-6xl mx-auto w-full">
+      <!-- Hero Section -->
+      <section class="py-8">
+        <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+          <div class="lg:w-2/5 flex-shrink-0">
+            <Picture
+              class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
+              src={authorPic}
+              widths={[300, 500, 700]}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+              alt="Alfonso Reyes - Fotógrafo analógico"
+            />
+          </div>
+
+          <div class="lg:w-3/5 space-y-8">
+            <div class="space-y-4">
+              <div class="text-beige-800 text-sm font-medium tracking-wide">
+                Hola 👋
+              </div>
+              <h1
+                class="text-4xl lg:text-6xl font-bold font-display text-beige-900 leading-tight"
+              >
+                Soy Alfonso Reyes
+              </h1>
+              <p
+                class="text-xl lg:text-2xl text-beige-700 font-medium leading-relaxed"
+              >
+                Ingeniero de software 👨🏽‍💻 y fotógrafo.
+              </p>
+            </div>
+
+            <div class="prose prose-lg prose-beige max-w-none">
+              <p class="text-lg text-beige-800 leading-relaxed">
+                Mi medio favorito para tomar fotos es la fotografía análoga, pues
+                encuentro fascinante el elemento sorpresa y la paciencia que
+                conlleva, atributos que siento han estado desapareciendo a favor
+                de experiencias efímeras y breves.
+              </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 pt-4">
+              <a
+                class="inline-flex items-center justify-center px-8 py-3 bg-beige-800 text-beige-50 rounded-xl font-medium tracking-wide uppercase transition-all duration-300 hover:bg-beige-700 hover:shadow-lg transform hover:-translate-y-0.5"
+                href="https://instagram.com/ojo.analogo/"
+                target="_blank"
+              >
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"
+                  ></path>
+                </svg>
+                Instagram
+              </a>
+              <a
+                href="mailto:hola@ojoanalogo.com"
+                target="_blank"
+                class="inline-flex items-center justify-center px-8 py-3 border-2 border-beige-300 text-beige-700 rounded-xl font-medium tracking-wide uppercase transition-all duration-300 hover:border-beige-500 hover:bg-beige-100 hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                <svg
+                  class="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                Contáctame
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </BaseLayout>

@@ -43,7 +43,12 @@ const links: Array<NavLink> = [
     ],
   },
   {
-    title: "sitio web personal",
+    title: "quién soy",
+    id: "about",
+    url: "/about",
+  },
+  {
+    title: "mi otro yo",
     redirect: "https://alfon.so",
   },
 ];
@@ -259,32 +264,72 @@ const links: Array<NavLink> = [
   const mobileMenuClose = document.getElementById("mobile-menu-close");
 
   function openMobileMenu() {
+    // Check if elements exist and are accessible
+    if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
+    
     mobileMenu.classList.remove("translate-x-full");
     mobileMenuOverlay.classList.remove("opacity-0", "invisible");
     document.body.style.overflow = "hidden";
 
     // Animate hamburger to X
     const spans = mobileMenuButton.querySelectorAll("span");
-    spans[0].style.transform = "rotate(45deg) translate(5px, 5px)";
-    spans[1].style.opacity = "0";
-    spans[2].style.transform = "rotate(-45deg) translate(7px, -6px)";
+    if (spans.length >= 3) {
+      spans[0].style.transform = "rotate(45deg) translate(5px, 5px)";
+      spans[1].style.opacity = "0";
+      spans[2].style.transform = "rotate(-45deg) translate(7px, -6px)";
+    }
   }
 
   function closeMobileMenu() {
+    // Check if elements exist and are accessible
+    if (!mobileMenu || !mobileMenuOverlay || !mobileMenuButton) return;
+    
     mobileMenu.classList.add("translate-x-full");
     mobileMenuOverlay.classList.add("opacity-0", "invisible");
     document.body.style.overflow = "";
 
     // Reset hamburger
     const spans = mobileMenuButton.querySelectorAll("span");
-    spans[0].style.transform = "";
-    spans[1].style.opacity = "";
-    spans[2].style.transform = "";
+    if (spans.length >= 3) {
+      spans[0].style.transform = "";
+      spans[1].style.opacity = "";
+      spans[2].style.transform = "";
+    }
   }
 
-  mobileMenuButton.addEventListener("click", openMobileMenu);
-  mobileMenuClose.addEventListener("click", closeMobileMenu);
-  mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+  // Initialize mobile menu state on page load
+  function initializeMobileMenu() {
+    // Ensure menu starts in closed state
+    if (mobileMenu && mobileMenuOverlay) {
+      mobileMenu.classList.add("translate-x-full");
+      mobileMenuOverlay.classList.add("opacity-0", "invisible");
+      document.body.style.overflow = "";
+      
+      // Reset hamburger button to initial state
+      if (mobileMenuButton) {
+        const spans = mobileMenuButton.querySelectorAll("span");
+        if (spans.length >= 3) {
+          spans[0].style.transform = "";
+          spans[1].style.opacity = "";
+          spans[2].style.transform = "";
+        }
+      }
+    }
+  }
+  
+  // Initialize on page load
+  initializeMobileMenu();
+
+  // Add event listeners with null checks
+  if (mobileMenuButton) {
+    mobileMenuButton.addEventListener("click", openMobileMenu);
+  }
+  if (mobileMenuClose) {
+    mobileMenuClose.addEventListener("click", closeMobileMenu);
+  }
+  if (mobileMenuOverlay) {
+    mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+  }
 
   // Handle mobile dropdown toggles
   const mobileDropdownToggles = document.querySelectorAll(
@@ -311,10 +356,25 @@ const links: Array<NavLink> = [
   });
 
   // Close mobile menu on window resize to desktop
+  let resizeTimeout;
   window.addEventListener("resize", () => {
-    if (window.innerWidth >= 768) {
-      closeMobileMenu();
-    }
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (window.innerWidth >= 768) {
+        // Force close mobile menu and reset button state
+        closeMobileMenu();
+        
+        // Ensure hamburger button is reset to initial state
+        if (mobileMenuButton) {
+          const spans = mobileMenuButton.querySelectorAll("span");
+          if (spans.length >= 3) {
+            spans[0].style.transform = "";
+            spans[1].style.opacity = "";
+            spans[2].style.transform = "";
+          }
+        }
+      }
+    }, 150); // Debounce resize events
   });
 
   // Handle escape key to close mobile menu

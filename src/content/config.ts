@@ -12,7 +12,7 @@ const blogSchema = z.object({
 
 const gallerySchema = z.object({
   title: z.string(),
-  description: z.string(),
+  description: z.string().optional(),
   slug: z.string().optional(),
   date: z.coerce.date().optional(),
 });
