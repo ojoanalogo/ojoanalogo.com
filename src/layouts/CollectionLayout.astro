@@ -1,0 +1,109 @@
+---
+import dayjs from "dayjs";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+import Gallery from "../components/Gallery.astro";
+import { SITE_TITLE } from "../config";
+import BaseLayout from "./BaseLayout.astro";
+
+export interface Props {
+  title: string;
+  publishDate: Date;
+  socialImagePath: string;
+  photos: {
+    film?: Record<string, unknown>[];
+    digital?: Record<string, unknown>[];
+  } | undefined;
+  updatedDate?: Date;
+  description?: string;
+  tags?: string[];
+}
+
+const {
+  title,
+  publishDate,
+  updatedDate,
+  photos,
+  description,
+  socialImagePath,
+  tags,
+} = Astro.props;
+dayjs.extend(localizedFormat);
+
+const publishDateString = dayjs(publishDate).format("ll");
+let updatedDateString;
+if (updatedDate) {
+  updatedDateString = dayjs(updatedDate).format("ll");
+}
+---
+
+<BaseLayout
+  title={`${SITE_TITLE} - ${title}`}
+  description={description}
+  socialImagePath={socialImagePath}
+  sideBarActiveItemID="collections"
+>
+  <div class="pb-12 mt-5">
+    <div class="text-3xl font-bold mb-1">{title}</div>
+    <p class="text-sm text-gray-700">
+      Publicado: <span class="text-gray-900">{publishDateString}</span>
+    </p>
+    {
+      updatedDate && (
+        <p class="text-sm text-gray-700">
+          Actualizado: <span class="text-gray-900">{updatedDateString}</span>
+        </p>
+      )
+    }
+    <div class="mt-2">
+      {
+        (tags ?? []).map((tag) => (
+          <span class="badge badge-accent badge-md text-white mr-2">{tag}</span>
+        ))
+      }
+    </div>
+    <div class="mb-4 mt-4">
+      <slot />
+    </div>
+    {
+      photos?.film && photos?.digital && (
+        <div>
+          <div class="mb-4">
+            <h2 class="text-2xl font-bold mb-2">Film</h2>
+            <Gallery photos={photos.film} biggerPictures={false} />
+          </div>
+          <div class="mb-4">
+            <h2 class="text-2xl font-bold mb-2">Digital</h2>
+            <Gallery photos={photos.digital} biggerPictures={false} />
+          </div>
+        </div>
+      )
+    }
+    {
+      photos?.digital && photos.digital?.length > 0 && !photos.film && (
+        <div class="mb-4">
+          <Gallery photos={photos.digital} biggerPictures={true} />
+        </div>
+      )
+    }
+    {
+      photos?.film && photos.film?.length > 0 && !photos.digital && (
+        <div class="mb-4">
+          <Gallery photos={photos.film} biggerPictures={true} />
+        </div>
+      )
+    }
+    {
+      photos?.digital?.length === 0 && photos.film?.length === 0 && (
+        <div class="text-center text-gray-700">
+          <p class="text-5xl mb-12">🔍</p>
+          <p class="text-lg">
+            No hay fotos en esta colección, te invito a regresar a la{" "}
+            <a href="/collections" class="font-bold text-zinc-800">
+              galería
+            </a>
+          </p>
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>

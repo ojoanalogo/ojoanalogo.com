@@ -1,0 +1,366 @@
+---
+const { title, navbarActiveItemID } = Astro.props;
+const activeClasses = ["text-white", "opacity-100"];
+
+interface NavLink {
+  title: string;
+  id?: string;
+  url?: string;
+  new?: boolean;
+  redirect?: string;
+  children?: Array<{
+    title: string;
+    url: string;
+    id?: string;
+  }>;
+}
+
+const links: Array<NavLink> = [
+  {
+    title: "inicio",
+    id: "home",
+    url: "/",
+  },
+  {
+    title: "galería",
+    id: "gallery",
+    children: [
+      {
+        title: "Narnia",
+        url: "/narnia",
+        id: "works-narnia",
+      },
+      {
+        title: "Japón",
+        url: "/japan",
+        id: "works-japan",
+      },
+      {
+        title: "Cows",
+        url: "/cows",
+        id: "works-cows",
+      },
+    ],
+  },
+  {
+    title: "quién soy",
+    id: "about",
+    url: "/about",
+  },
+  {
+    title: "mi otro yo",
+    redirect: "https://alfon.so",
+  },
+];
+---
+
+<header
+  id="main-header"
+  class="xl:w-[55rem] lg:w-4/5 w-full p-4 px-8 md:h-20 mx-auto flex flex-col md:flex-row md:items-center md:justify-between relative"
+>
+  <div class="mb-2 flex items-center justify-between w-full md:w-auto">
+    <a href="/" target="_self" class="text-zinc-800 font-display text-xl">
+      {title}
+    </a>
+    <!-- Mobile menu button -->
+    <button
+      id="mobile-menu-button"
+      class="md:hidden flex items-center justify-center w-8 h-8 focus:outline-none"
+      aria-label="Toggle mobile menu"
+    >
+      <svg
+        class="w-6 h-6 text-zinc-800/40"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Desktop Navigation -->
+  <nav
+    id="navigation-menu"
+    aria-label="Main menu"
+    class="hidden md:block w-full md:w-auto"
+  >
+    <div class="flex flex-wrap gap-6 text-base font-light">
+      {
+        links.map((link) => {
+          if (link.children) {
+            return (
+              <div class="relative group">
+                <button
+                  class="text-gray-700 opacity-80 hover:opacity-100 transition-opacity duration-200 flex items-center gap-1"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  {link.title}
+                  <svg
+                    class="w-4 h-4 transition-transform duration-200 group-hover:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  class="absolute top-full left-0 mt-2 w-48 bg-beige-50 border-beige-300
+                  rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                  transition-all duration-200 z-50 border"
+                >
+                  <div class="py-1">
+                    {link.children.map((child) => (
+                      <a
+                        href={child.url}
+                        id={child.id}
+                        class="block px-4 py-2 text-sm text-beige-900 hover:bg-beige-200 hover:text-beige-900 transition-colors duration-150"
+                      >
+                        {child.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          } else {
+            return (
+              <a
+                href={link.redirect ? link.redirect : link.url}
+                target={link.redirect ? "_blank" : "_self"}
+                id={link.id}
+                class="text-gray-700 opacity-80 hover:opacity-100 transition-opacity duration-200"
+              >
+                {link.title}
+              </a>
+            );
+          }
+        })
+      }
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation Overlay -->
+  <div
+    id="mobile-menu-overlay"
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 opacity-0 invisible transition-all duration-300 md:hidden"
+  >
+  </div>
+
+  <!-- Mobile Navigation Menu -->
+  <nav
+    id="mobile-menu"
+    class="fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white z-50 transform translate-x-full transition-transform duration-300 md:hidden shadow-xl"
+  >
+    <div class="flex flex-col h-full">
+      <!-- Mobile menu header -->
+      <div
+        class="flex items-center justify-between p-6 border-b border-gray-200"
+      >
+        <span class="text-lg font-medium text-zinc-800">{title}</span>
+        <button
+          id="mobile-menu-close"
+          class="w-8 h-8 flex items-center justify-center focus:outline-none"
+          aria-label="Close mobile menu"
+        >
+          <svg
+            class="w-6 h-6 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile menu content -->
+      <div class="flex-1 overflow-y-auto py-4">
+        {
+          links.map((link) => {
+            if (link.children) {
+              return (
+                <div class="mobile-dropdown">
+                  <button
+                    class="mobile-dropdown-toggle flex items-center justify-between w-full px-6 py-3 text-left text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                    aria-expanded="false"
+                  >
+                    <span>{link.title}</span>
+                    <svg
+                      class="mobile-dropdown-icon w-5 h-5 transition-transform duration-200"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div class="mobile-dropdown-content max-h-0 overflow-hidden transition-all duration-300 bg-gray-50">
+                    {link.children.map((child) => (
+                      <a
+                        href={child.url}
+                        id={child.id}
+                        class="block px-10 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-150"
+                      >
+                        {child.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <a
+                  href={link.redirect ? link.redirect : link.url}
+                  target={link.redirect ? "_blank" : "_self"}
+                  id={link.id}
+                  class="block px-6 py-3 text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                >
+                  {link.title}
+                </a>
+              );
+            }
+          })
+        }
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script
+  define:vars={{
+    navbarActiveItemID,
+    activeClasses,
+  }}
+>
+  // Cache DOM elements to avoid repeated queries
+  let mobileMenuElements = null;
+
+  function getMobileMenuElements() {
+    if (!mobileMenuElements) {
+      mobileMenuElements = {
+        button: document.getElementById("mobile-menu-button"),
+        menu: document.getElementById("mobile-menu"),
+        overlay: document.getElementById("mobile-menu-overlay"),
+        close: document.getElementById("mobile-menu-close"),
+      };
+    }
+    return mobileMenuElements;
+  }
+
+
+  function setMobileMenuState(isOpen = false) {
+    const { menu, overlay } = getMobileMenuElements();
+    if (!menu || !overlay) return;
+
+    if (isOpen) {
+      menu.classList.remove("translate-x-full");
+      overlay.classList.remove("opacity-0", "invisible");
+      document.body.style.overflow = "hidden";
+    } else {
+      menu.classList.add("translate-x-full");
+      overlay.classList.add("opacity-0", "invisible");
+      document.body.style.overflow = "";
+    }
+  }
+
+  function isMobileMenuOpen() {
+    const { menu } = getMobileMenuElements();
+    return menu && !menu.classList.contains("translate-x-full");
+  }
+
+  function initializeHeader() {
+    // Reset cache on page load
+    mobileMenuElements = null;
+
+    // Apply active classes to current page
+    if (navbarActiveItemID) {
+      const activeItemElement = document.getElementById(navbarActiveItemID);
+      if (activeItemElement) {
+        activeClasses.forEach((activeClass) => {
+          activeItemElement.classList.add(activeClass);
+        });
+      }
+    }
+
+    // Initialize mobile menu state
+    setMobileMenuState(false);
+
+    // Add event listeners
+    const { button, close, overlay } = getMobileMenuElements();
+    
+    button?.addEventListener("click", () => setMobileMenuState(true));
+    close?.addEventListener("click", () => setMobileMenuState(false));
+    overlay?.addEventListener("click", () => setMobileMenuState(false));
+  }
+
+  // Mobile dropdown toggle handler (using event delegation)
+  document.addEventListener("click", (e) => {
+    const toggle = e.target.closest?.(".mobile-dropdown-toggle");
+    if (!toggle) return;
+
+    const dropdown = toggle.closest(".mobile-dropdown");
+    const content = dropdown?.querySelector(".mobile-dropdown-content");
+    const icon = dropdown?.querySelector(".mobile-dropdown-icon");
+    const isOpen = toggle.getAttribute("aria-expanded") === "true";
+
+    if (content && icon) {
+      const newState = !isOpen;
+      content.style.maxHeight = newState ? `${content.scrollHeight}px` : "0";
+      icon.style.transform = newState ? "rotate(180deg)" : "";
+      toggle.setAttribute("aria-expanded", newState.toString());
+    }
+  });
+
+  // Close mobile menu on desktop resize (debounced)
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (window.innerWidth >= 768 && isMobileMenuOpen()) {
+        setMobileMenuState(false);
+      }
+    }, 150);
+  });
+
+  // Close mobile menu on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isMobileMenuOpen()) {
+      setMobileMenuState(false);
+    }
+  });
+
+  // Initialize based on document state
+  function setupInitialization() {
+    if (document.readyState === 'loading') {
+      document.addEventListener("DOMContentLoaded", initializeHeader);
+    } else {
+      initializeHeader();
+    }
+  }
+
+  // Handle Astro page transitions and initial load
+  document.addEventListener("astro:page-load", initializeHeader);
+  setupInitialization();
+</script>
