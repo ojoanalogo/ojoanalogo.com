@@ -1,0 +1,90 @@
+---
+import { Image } from "astro:assets";
+
+export interface Props {
+  photos: Array<any>;
+  newestFirst?: boolean;
+  biggerPictures?: boolean;
+}
+
+let { photos, newestFirst = true, biggerPictures = false } = Astro.props;
+
+if (newestFirst) {
+  photos.reverse();
+}
+
+export let classList: Array<string>;
+
+classList = biggerPictures
+  ? [
+      "min-[2800px]:columns-6",
+      "min-[2400px]:columns-5",
+      "min-[2100px]:columns-4",
+      "min-[1980px]:columns-4",
+      "lg:columns-3",
+      "md:columns-2",
+      "columns-1",
+      "gap-4",
+      "md:gap-5",
+      "lg:gap-6",
+      "break-inside-avoid",
+    ]
+  : [
+      "min-[2800px]:columns-7",
+      "min-[2400px]:columns-6",
+      "min-[2100px]:columns-5",
+      "min-[1980px]:columns-4",
+      "lg:columns-4",
+      "md:columns-3",
+      "sm:columns-2",
+      "columns-1",
+      "gap-3",
+      "md:gap-4",
+      "lg:gap-5",
+      "break-inside-avoid",
+    ];
+---
+
+<div class={classList.join(" ")}>
+  {
+    photos?.map(async (photo: any) => {
+      const picture = await photo.default;
+      const fileName = picture.src.split("/").pop();
+      // photoURL fix for production
+      const lightboxPhotoUrl = import.meta.env.PROD
+        ? `https://ojoanalogo.com${photo.default.src}`
+        : `${photo.default.src}`;
+
+      return (
+        <div class="break-inside-avoid mb-4 md:mb-5 lg:mb-6">
+          <a
+            class="cursor-pointer block aspect-auto"
+            data-href={lightboxPhotoUrl}
+            data-fslightbox
+            data-umami-event="Photo click"
+            data-umami-event-photo-id={fileName}
+          >
+            <Image
+              class="w-full h-auto object-cover hover:shadow-md ease-in duration-300 rounded-sm"
+              src={picture}
+              decoding="async"
+              loading="lazy"
+              alt=""
+              quality={"mid"}
+              width={picture.width / 2}
+            />
+          </a>
+        </div>
+      );
+    })
+  }
+</div>
+
+<style>
+  @media (hover: hover) {
+    a:hover img {
+      transform: scale(1.01);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+  }
+</style>

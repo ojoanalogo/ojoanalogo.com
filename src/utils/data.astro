@@ -1,0 +1,12 @@
+---
+export const getPhotoGlobal = async (slug: string) => {
+  switch (slug) {
+    case "narnia-2023":
+      return {
+        film: await Astro.glob(
+          "../content/collections/narnia-2023/assets/*.jpg",
+        ),
+      };
+  }
+};
+---
