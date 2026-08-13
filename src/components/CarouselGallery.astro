@@ -104,6 +104,7 @@ const total = photos?.length ?? 0;
   let progressRaf: number | null = null;
   let progressStartedAt = 0;
   let progressDelay = 8000;
+  let stageObserver: ResizeObserver | null = null;
 
   const shuffleArray = <T,>(array: T[]) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -121,11 +122,33 @@ const total = photos?.length ?? 0;
     slides.forEach((slide) => wrapper.appendChild(slide));
   };
 
+  const syncStageMetrics = (hall: HTMLElement, stage: HTMLElement) => {
+    const rect = stage.getBoundingClientRect();
+    // Leave room for frame rail + mat so the photo itself never clips
+    const chrome = window.matchMedia("(max-height: 720px)").matches ? 40 : 64;
+    const photoMaxH = Math.max(120, Math.floor(rect.height - chrome));
+    const photoMaxW = Math.max(120, Math.floor(rect.width - chrome));
+    hall.style.setProperty("--photo-max-h", `${photoMaxH}px`);
+    hall.style.setProperty("--photo-max-w", `${photoMaxW}px`);
+  };
+
+  const bindStageObserver = (hall: HTMLElement) => {
+    const stage = hall.querySelector(".gallery-stage") as HTMLElement | null;
+    if (!stage) return;
+
+    syncStageMetrics(hall, stage);
+    stageObserver?.disconnect();
+    stageObserver = new ResizeObserver(() => syncStageMetrics(hall, stage));
+    stageObserver.observe(stage);
+  };
+
   const destroySwiper = () => {
     if (progressRaf !== null) {
       cancelAnimationFrame(progressRaf);
       progressRaf = null;
     }
+    stageObserver?.disconnect();
+    stageObserver = null;
     if (swiperInstance) {
       swiperInstance.destroy(true, true);
       swiperInstance = null;
@@ -209,7 +232,9 @@ const total = photos?.length ?? 0;
       shuffleSlides(swiperContainer);
     }
 
-    const hall = swiperContainer.closest(".gallery-hall");
+    const hall = swiperContainer.closest(".gallery-hall") as HTMLElement | null;
+    if (hall) bindStageObserver(hall);
+
     const counterEl =
       hall?.querySelector(".current-slide") ??
       document.querySelector(".current-slide");
@@ -244,6 +269,9 @@ const total = photos?.length ?? 0;
     --wall-deep: #ebe4d8;
     --wall-light: #f7f3ec;
     --plaque: #6d5f4e;
+    /* Safe defaults before ResizeObserver measures the stage */
+    --photo-max-h: calc(100dvh - 10.5rem);
+    --photo-max-w: min(92vw, 1180px);
 
     position: relative;
     display: flex;
@@ -299,17 +327,15 @@ const total = photos?.length ?? 0;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem 0.5rem;
-    /* Size images against the real slide box as the viewport height changes */
-    container-type: size;
+    padding: 0.25rem 0.35rem;
   }
 
   .artwork-frame {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: auto;
-    height: auto;
+    width: fit-content;
+    height: fit-content;
     max-width: 100%;
     max-height: 100%;
     margin: 0;
@@ -318,10 +344,11 @@ const total = photos?.length ?? 0;
 
   .frame-rail {
     display: flex;
+    box-sizing: border-box;
     max-width: 100%;
     max-height: 100%;
     min-height: 0;
-    padding: clamp(0.3rem, 0.7vw, 0.6rem);
+    padding: clamp(0.28rem, 0.65vw, 0.55rem);
     background: linear-gradient(
       145deg,
       #3a322b 0%,
@@ -339,10 +366,11 @@ const total = photos?.length ?? 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     max-width: 100%;
     max-height: 100%;
     min-height: 0;
-    padding: clamp(0.55rem, 1.6vw, 1.45rem);
+    padding: clamp(0.45rem, 1.4vw, 1.25rem);
     background: var(--mat);
     box-shadow: inset 0 0 0 1px rgba(44, 38, 33, 0.06);
   }
@@ -355,16 +383,13 @@ const total = photos?.length ?? 0;
     line-height: 0;
   }
 
-  /*
-    No fixed aspect-ratio shell. Photos scale to the slide container so
-    resizing height keeps the full image visible (object-fit: contain).
-  */
+  /* Live stage metrics keep the full photo visible as height changes */
   .artwork {
     display: block;
     width: auto;
     height: auto;
-    max-width: min(100cqw - 2.5rem, 92vw);
-    max-height: calc(100cqh - 2.25rem);
+    max-width: var(--photo-max-w);
+    max-height: var(--photo-max-h);
     object-fit: contain;
   }
 
@@ -479,17 +504,16 @@ const total = photos?.length ?? 0;
   }
 
   @media (max-height: 720px) {
+    .gallery-hall {
+      --photo-max-h: calc(100dvh - 8.75rem);
+    }
+
     .frame-mat {
-      padding: clamp(0.35rem, 1vw, 0.8rem);
+      padding: clamp(0.3rem, 0.9vw, 0.65rem);
     }
 
     .frame-rail {
-      padding: 0.28rem;
-    }
-
-    .artwork {
-      max-width: min(100cqw - 1.75rem, 94vw);
-      max-height: calc(100cqh - 1.5rem);
+      padding: 0.22rem;
     }
 
     .gallery-plaque {
@@ -499,6 +523,10 @@ const total = photos?.length ?? 0;
   }
 
   @media (max-height: 560px) {
+    .gallery-hall {
+      --photo-max-h: calc(100dvh - 7.25rem);
+    }
+
     .gallery-plaque {
       padding-top: 0.3rem;
     }
