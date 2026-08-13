@@ -27,18 +27,20 @@ const totalSlides = photos?.length ?? 0;
                   data-umami-event-photo-id={fileName}
                 >
                   <div class="frame-outer">
-                    <div class="frame-mat">
-                      <div class="frame-inner">
-                        <Image
-                          class="framed-photo"
-                          src={photo.src}
-                          decoding="async"
-                          loading={index === 0 ? "eager" : "lazy"}
-                          alt={photo.alt}
-                          widths={[400, 700, 900, 1400, 1800]}
-                          sizes="(max-width: 768px) 90vw, (max-width: 1280px) 70vw, 60vw"
-                          quality={"high"}
-                        />
+                    <div class="frame-fillet">
+                      <div class="frame-mat">
+                        <div class="frame-window">
+                          <Image
+                            class="framed-photo"
+                            src={photo.src}
+                            decoding="async"
+                            loading={index === 0 ? "eager" : "lazy"}
+                            alt={photo.alt}
+                            widths={[400, 700, 900, 1400, 1800]}
+                            sizes="(max-width: 768px) 90vw, (max-width: 1280px) 70vw, 60vw"
+                            quality={"high"}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -81,6 +83,10 @@ const totalSlides = photos?.length ?? 0;
   import { Autoplay, EffectFade, Keyboard, Navigation } from "swiper/modules";
 
   let swiperInstance: Swiper | null = null;
+  let pendingWalk = false;
+
+  const prefersReducedMotion = () =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const shuffleArray = <T,>(array: T[]): void => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -105,11 +111,29 @@ const totalSlides = photos?.length ?? 0;
     }
   };
 
+  const applyMotion = (swiper: Swiper, dir: "next" | "prev"): void => {
+    const el = swiper.el as HTMLElement;
+    const useWalk = pendingWalk && !prefersReducedMotion();
+    el.dataset.motion = useWalk ? "walk" : "fade";
+    el.dataset.dir = dir;
+
+    if (useWalk) {
+      swiper.setTransition(1250);
+    }
+  };
+
+  const clearMotion = (swiper: Swiper): void => {
+    const el = swiper.el as HTMLElement;
+    el.removeAttribute("data-motion");
+    el.removeAttribute("data-dir");
+    pendingWalk = false;
+  };
+
   const createSwiperConfig = (counterEl: Element | null) => ({
     modules: [EffectFade, Navigation, Autoplay, Keyboard],
-    effect: "fade",
+    effect: "fade" as const,
     fadeEffect: { crossFade: true },
-    speed: 900,
+    speed: 800,
     allowTouchMove: true,
     loop: true,
     autoplay: {
@@ -122,6 +146,14 @@ const totalSlides = photos?.length ?? 0;
     },
     keyboard: { enabled: true },
     on: {
+      beforeTransitionStart: (_swiper: Swiper, speed: number, internal?: boolean) => {
+        // Autoplay calls slideNext(speed, true, true). User nav omits internal.
+        // Loop corrections also pass internal but with speed 0 — ignore those.
+        pendingWalk = Boolean(internal) && speed > 0;
+      },
+      slideNextTransitionStart: (swiper: Swiper) => applyMotion(swiper, "next"),
+      slidePrevTransitionStart: (swiper: Swiper) => applyMotion(swiper, "prev"),
+      transitionEnd: (swiper: Swiper) => clearMotion(swiper),
       slideChange: (swiper: Swiper) => {
         if (counterEl) {
           counterEl.textContent = (swiper.realIndex + 1).toString();
@@ -132,6 +164,7 @@ const totalSlides = photos?.length ?? 0;
 
   const initSwiper = (): void => {
     destroySwiper();
+    pendingWalk = false;
 
     const swiperContainer = document.querySelector(".showcase-swiper") as HTMLElement;
     if (!swiperContainer) return;
@@ -160,10 +193,15 @@ const totalSlides = photos?.length ?? 0;
 <style>
   :root {
     --swiper-navigation-size: 0;
-    --frame-wood: #3d2e22;
-    --frame-wood-light: #5a4535;
-    --mat-color: #f5f1eb;
-    --mat-shadow: #ebe3d4;
+    --frame-walnut: #4a3428;
+    --frame-walnut-mid: #3a281e;
+    --frame-walnut-dark: #241810;
+    --frame-highlight: rgba(232, 210, 176, 0.28);
+    --fillet-light: #d4bc8c;
+    --fillet-mid: #b89562;
+    --fillet-dark: #8a6a3e;
+    --mat-paper: #f7f3ec;
+    --mat-paper-edge: #e8dfd2;
   }
 
   .gallery-showcase {
@@ -173,6 +211,7 @@ const totalSlides = photos?.length ?? 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .showcase-swiper {
@@ -180,6 +219,7 @@ const totalSlides = photos?.length ?? 0;
     min-height: 0;
     width: 100%;
     position: relative;
+    overflow: hidden;
   }
 
   .swiper-wrapper,
@@ -191,6 +231,7 @@ const totalSlides = photos?.length ?? 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: visible;
   }
 
   .slide-stage {
@@ -210,43 +251,67 @@ const totalSlides = photos?.length ?? 0;
     max-height: 100%;
     text-decoration: none;
     cursor: default;
-    transition: transform 0.6s ease;
+    will-change: transform;
   }
 
-  /* Outer wooden frame */
+  /* Walnut moulding with bevelled edges */
   .frame-outer {
-    padding: 10px;
-    background: linear-gradient(
-      145deg,
-      var(--frame-wood-light) 0%,
-      var(--frame-wood) 30%,
-      #2a1f17 70%,
-      var(--frame-wood) 100%
-    );
-    box-shadow:
-      0 2px 0 rgba(255, 255, 255, 0.08) inset,
-      0 -2px 0 rgba(0, 0, 0, 0.2) inset,
-      0 8px 24px rgba(89, 79, 66, 0.18),
-      0 2px 8px rgba(89, 79, 66, 0.1);
+    position: relative;
+    padding: 13px;
     max-height: 100%;
     display: flex;
     flex-direction: column;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 38%, rgba(0, 0, 0, 0.28) 100%),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, transparent 30%, rgba(0, 0, 0, 0.18) 100%),
+      linear-gradient(145deg, #5c4334 0%, var(--frame-walnut) 32%, var(--frame-walnut-mid) 68%, var(--frame-walnut-dark) 100%);
+    box-shadow:
+      inset 0 1px 0 var(--frame-highlight),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+      inset 1px 0 0 rgba(255, 255, 255, 0.1),
+      inset -1px 0 0 rgba(0, 0, 0, 0.35),
+      0 1px 2px rgba(89, 79, 66, 0.18),
+      0 10px 20px rgba(89, 79, 66, 0.12),
+      0 24px 48px rgba(89, 79, 66, 0.1);
   }
 
-  /* Mat (passe-partout) */
-  .frame-mat {
-    padding: clamp(12px, 2.5vw, 28px);
-    background: linear-gradient(160deg, var(--mat-color) 0%, var(--mat-shadow) 100%);
+  .frame-outer::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    pointer-events: none;
     box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.06),
-      inset 0 2px 4px rgba(0, 0, 0, 0.04);
+      inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.07);
+  }
+
+  /* Thin brass fillet between wood and mat */
+  .frame-fillet {
+    padding: 3px;
+    background: linear-gradient(145deg, var(--fillet-light) 0%, var(--fillet-mid) 42%, var(--fillet-dark) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  .frame-inner {
+  /* Paper mat (passe-partout) */
+  .frame-mat {
+    padding: clamp(14px, 2.8vw, 34px);
+    background:
+      linear-gradient(180deg, #fcfaf6 0%, var(--mat-paper) 55%, var(--mat-paper-edge) 100%);
+    box-shadow: inset 0 0 0 1px rgba(90, 70, 50, 0.06);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Bevelled window cut into the mat */
+  .frame-window {
     flex: 1;
     min-height: 0;
     display: flex;
@@ -254,7 +319,11 @@ const totalSlides = photos?.length ?? 0;
     justify-content: center;
     overflow: hidden;
     background: #1a1816;
-    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.25);
+    box-shadow:
+      1px 1px 0 rgba(255, 255, 255, 0.55),
+      -1px -1px 0 rgba(160, 138, 112, 0.35),
+      inset 2px 2px 3px rgba(0, 0, 0, 0.28),
+      inset -1px -1px 2px rgba(255, 255, 255, 0.06);
   }
 
   .framed-photo {
@@ -266,7 +335,77 @@ const totalSlides = photos?.length ?? 0;
     object-fit: contain;
   }
 
-  /* Slide counter */
+  /* Autoplay: walk along the wall. Explicit nav keeps Swiper's crossfade. */
+  .showcase-swiper[data-motion="walk"] .swiper-slide-active,
+  .showcase-swiper[data-motion="walk"] .swiper-slide-prev,
+  .showcase-swiper[data-motion="walk"] .swiper-slide-next {
+    opacity: 1 !important;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="next"] .swiper-slide-next,
+  .showcase-swiper[data-motion="walk"][data-dir="prev"] .swiper-slide-prev {
+    opacity: 0 !important;
+    visibility: hidden;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="next"] .swiper-slide-prev {
+    z-index: 1;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="next"] .swiper-slide-active {
+    z-index: 2;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="prev"] .swiper-slide-next {
+    z-index: 1;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="prev"] .swiper-slide-active {
+    z-index: 2;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="next"] .swiper-slide-prev .art-piece {
+    animation: walk-out-left 1.25s cubic-bezier(0.45, 0.05, 0.15, 1) both;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="next"] .swiper-slide-active .art-piece {
+    animation: walk-in-from-right 1.25s cubic-bezier(0.45, 0.05, 0.15, 1) both;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="prev"] .swiper-slide-next .art-piece {
+    animation: walk-out-right 1.25s cubic-bezier(0.45, 0.05, 0.15, 1) both;
+  }
+
+  .showcase-swiper[data-motion="walk"][data-dir="prev"] .swiper-slide-active .art-piece {
+    animation: walk-in-from-left 1.25s cubic-bezier(0.45, 0.05, 0.15, 1) both;
+  }
+
+  @keyframes walk-out-left {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(-100% - 5rem)); }
+  }
+
+  @keyframes walk-in-from-right {
+    from { transform: translateX(calc(100% + 5rem)); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes walk-out-right {
+    from { transform: translateX(0); }
+    to { transform: translateX(calc(100% + 5rem)); }
+  }
+
+  @keyframes walk-in-from-left {
+    from { transform: translateX(calc(-100% - 5rem)); }
+    to { transform: translateX(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .art-piece {
+      animation: none !important;
+    }
+  }
+
   .slide-counter {
     position: absolute;
     bottom: 0.5rem;
@@ -286,7 +425,6 @@ const totalSlides = photos?.length ?? 0;
     opacity: 0.4;
   }
 
-  /* Navigation */
   .swiper-button-next::after,
   .swiper-button-prev::after {
     display: none;
@@ -342,22 +480,6 @@ const totalSlides = photos?.length ?? 0;
     flex-shrink: 0;
   }
 
-  /* Active slide entrance animation */
-  .swiper-slide-active .art-piece {
-    animation: frameReveal 0.8s ease-out;
-  }
-
-  @keyframes frameReveal {
-    from {
-      opacity: 0;
-      transform: scale(0.97) translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-
   @media (max-width: 1024px) {
     .nav-arrow {
       min-width: 44px;
@@ -382,7 +504,11 @@ const totalSlides = photos?.length ?? 0;
     }
 
     .frame-outer {
-      padding: 7px;
+      padding: 9px;
+    }
+
+    .frame-fillet {
+      padding: 2px;
     }
 
     .framed-photo {
