@@ -7,8 +7,8 @@ const photos = getFeaturedPhotos();
 ---
 
 <BaseLayout sideBarActiveItemID="home">
-  <div class="flex-grow flex items-center justify-center py-4">
-    <div class="w-full max-w-[95%] lg:max-w-[90%] xl:max-w-[85%] mx-auto">
+  <div class="flex-1 flex flex-col min-h-0 py-3 md:py-4">
+    <div class="flex-1 flex flex-col min-h-0 w-full max-w-[95%] lg:max-w-[92%] xl:max-w-[88%] mx-auto">
       <CarouselGallery photos={photos} randomize={true} />
     </div>
   </div>
