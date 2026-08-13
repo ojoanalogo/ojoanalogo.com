@@ -83,7 +83,7 @@ const totalSlides = photos?.length ?? 0;
   import { Autoplay, EffectFade, Keyboard, Navigation } from "swiper/modules";
 
   let swiperInstance: Swiper | null = null;
-  let pendingWalk = false;
+  let lastSpeed = 0;
 
   const prefersReducedMotion = () =>
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -112,8 +112,10 @@ const totalSlides = photos?.length ?? 0;
   };
 
   const applyMotion = (swiper: Swiper, dir: "next" | "prev"): void => {
+    if (lastSpeed === 0) return;
+
     const el = swiper.el as HTMLElement;
-    const useWalk = pendingWalk && !prefersReducedMotion();
+    const useWalk = !prefersReducedMotion();
     el.dataset.motion = useWalk ? "walk" : "fade";
     el.dataset.dir = dir;
 
@@ -126,15 +128,15 @@ const totalSlides = photos?.length ?? 0;
     const el = swiper.el as HTMLElement;
     el.removeAttribute("data-motion");
     el.removeAttribute("data-dir");
-    pendingWalk = false;
   };
 
   const createSwiperConfig = (counterEl: Element | null) => ({
     modules: [EffectFade, Navigation, Autoplay, Keyboard],
     effect: "fade" as const,
     fadeEffect: { crossFade: true },
-    speed: 800,
+    speed: 1250,
     allowTouchMove: true,
+    followFinger: false,
     loop: true,
     autoplay: {
       delay: 8000,
@@ -146,10 +148,8 @@ const totalSlides = photos?.length ?? 0;
     },
     keyboard: { enabled: true },
     on: {
-      beforeTransitionStart: (_swiper: Swiper, speed: number, internal?: boolean) => {
-        // Autoplay calls slideNext(speed, true, true). User nav omits internal.
-        // Loop corrections also pass internal but with speed 0 — ignore those.
-        pendingWalk = Boolean(internal) && speed > 0;
+      beforeTransitionStart: (_swiper: Swiper, speed: number) => {
+        lastSpeed = speed;
       },
       slideNextTransitionStart: (swiper: Swiper) => applyMotion(swiper, "next"),
       slidePrevTransitionStart: (swiper: Swiper) => applyMotion(swiper, "prev"),
@@ -164,7 +164,7 @@ const totalSlides = photos?.length ?? 0;
 
   const initSwiper = (): void => {
     destroySwiper();
-    pendingWalk = false;
+    lastSpeed = 0;
 
     const swiperContainer = document.querySelector(".showcase-swiper") as HTMLElement;
     if (!swiperContainer) return;
@@ -335,7 +335,7 @@ const totalSlides = photos?.length ?? 0;
     object-fit: contain;
   }
 
-  /* Autoplay: walk along the wall. Explicit nav keeps Swiper's crossfade. */
+  /* Side-to-side gallery walk for autoplay, arrows, keyboard, and swipe. */
   .showcase-swiper[data-motion="walk"] .swiper-slide-active,
   .showcase-swiper[data-motion="walk"] .swiper-slide-prev,
   .showcase-swiper[data-motion="walk"] .swiper-slide-next {
