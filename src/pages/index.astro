@@ -6,9 +6,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const photos = getFeaturedPhotos();
 ---
 
-<BaseLayout sideBarActiveItemID="home">
-  <div class="flex-grow flex items-center justify-center py-4">
-    <div class="w-full max-w-[95%] lg:max-w-[90%] xl:max-w-[85%] mx-auto">
+<BaseLayout sideBarActiveItemID="home" compactFooter>
+  <div class="gallery-home flex-1 min-h-0 flex flex-col h-full">
+    <div class="flex-1 min-h-0 w-full max-w-[96%] xl:max-w-[92%] 2xl:max-w-[88%] mx-auto flex flex-col">
       <CarouselGallery photos={photos} randomize={true} />
     </div>
   </div>
