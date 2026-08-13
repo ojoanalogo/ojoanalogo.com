@@ -10,6 +10,7 @@ const {
   title = SITE_TITLE,
   description = SITE_DESCRIPTION,
   navbarActiveItemID,
+  compactFooter = false,
 } = Astro.props;
 ---
 
@@ -26,12 +27,15 @@ const {
     />
   </head>
   <body
-    class="w-full font-body font-light tracking-wide min-h-screen flex flex-col"
+    class:list={[
+      "w-full font-body font-light tracking-wide min-h-screen flex flex-col",
+      compactFooter && "h-dvh max-h-dvh overflow-hidden",
+    ]}
   >
     <Header title={SITE_TITLE} navbarActiveItemID={navbarActiveItemID} />
-    <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col">
+    <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col min-h-0">
       <slot />
     </main>
-    <Footer />
+    <Footer compact={compactFooter} />
   </body>
 </html>
