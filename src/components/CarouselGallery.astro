@@ -1,6 +1,6 @@
 ---
-import { Image } from "astro:assets";
 import type { Photo } from "../types/photos";
+import { optimizeDisplayPhoto } from "../utils/optimizePhoto";
 
 export interface Props {
   photos: Array<Photo>;
@@ -9,6 +9,14 @@ export interface Props {
 
 const { photos, randomize = false } = Astro.props;
 const total = photos?.length ?? 0;
+
+const slides = await Promise.all(
+  (photos ?? []).map(async (photo) => {
+    const fileName = photo.src.src.split("/").pop() ?? "";
+    const sources = await optimizeDisplayPhoto(photo.src);
+    return { ...sources, alt: photo.alt, fileName };
+  }),
+);
 ---
 
 <section
@@ -20,41 +28,50 @@ const total = photos?.length ?? 0;
     <div class="swiper showcase-swiper" data-randomize={randomize} data-total={total}>
       <div class="swiper-wrapper">
         {
-          photos?.map(async (photo: Photo, index: number) => {
-            const fileName = photo.src.src.split("/").pop();
-
-            return (
-              <div
-                class="swiper-slide"
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${index + 1} de ${total}`}
-              >
-                <figure class="artwork-frame">
-                  <div class="frame-rail">
-                    <div class="frame-mat">
-                      <a
-                        class="artwork-link"
-                        data-umami-event="Carousel photo click"
-                        data-umami-event-photo-id={fileName}
-                      >
-                        <Image
-                          class="artwork"
-                          src={photo.src}
-                          decoding="async"
-                          loading={index === 0 ? "eager" : "lazy"}
-                          alt={photo.alt}
-                          widths={[400, 700, 900, 1400, 1800]}
-                          sizes="(max-width: 768px) 92vw, (max-width: 1280px) 80vw, 1200px"
-                          quality={"high"}
+          slides.map((slide, index) => (
+            <div
+              class="swiper-slide"
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`${index + 1} de ${total}`}
+            >
+              <figure class="artwork-frame">
+                <div class="frame-rail">
+                  <div class="frame-mat">
+                    <a
+                      class="artwork-link"
+                      data-umami-event="Carousel photo click"
+                      data-umami-event-photo-id={slide.fileName}
+                    >
+                      <picture>
+                        <source
+                          type="image/avif"
+                          data-srcset={slide.avifSrcSet}
+                          sizes={slide.sizes}
                         />
-                      </a>
-                    </div>
+                        <source
+                          type="image/webp"
+                          data-srcset={slide.webpSrcSet}
+                          sizes={slide.sizes}
+                        />
+                        <img
+                          class="artwork"
+                          data-src={slide.webpSrc}
+                          data-srcset={slide.webpSrcSet}
+                          data-sizes={slide.sizes}
+                          width={slide.width}
+                          height={slide.height}
+                          alt={slide.alt}
+                          decoding="async"
+                          draggable="false"
+                        />
+                      </picture>
+                    </a>
                   </div>
-                </figure>
-              </div>
-            );
-          })
+                </div>
+              </figure>
+            </div>
+          ))
         }
       </div>
 
@@ -122,9 +139,53 @@ const total = photos?.length ?? 0;
     slides.forEach((slide) => wrapper.appendChild(slide));
   };
 
+  /** Only hydrate active ± neighbors — fade slides share the viewport so native lazy fails */
+  const hydrateSlide = (slide: Element | null | undefined, eager = false) => {
+    if (!slide) return;
+    const picture = slide.querySelector("picture");
+    const img = slide.querySelector("img.artwork") as HTMLImageElement | null;
+    if (!img || img.dataset.hydrated === "true") return;
+
+    picture?.querySelectorAll("source[data-srcset]").forEach((source) => {
+      const el = source as HTMLSourceElement;
+      el.srcset = el.dataset.srcset || "";
+      el.removeAttribute("data-srcset");
+    });
+
+    if (img.dataset.srcset) {
+      img.srcset = img.dataset.srcset;
+      img.removeAttribute("data-srcset");
+    }
+    if (img.dataset.sizes) {
+      img.sizes = img.dataset.sizes;
+      img.removeAttribute("data-sizes");
+    }
+    if (img.dataset.src) {
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+    }
+
+    if (eager) img.setAttribute("fetchpriority", "high");
+    img.dataset.hydrated = "true";
+    img.classList.add("is-hydrated");
+  };
+
+  const hydrateAround = (swiper: InstanceType<typeof Swiper>) => {
+    const slides = swiper.slides;
+    if (!slides?.length) return;
+
+    const active = swiper.activeIndex;
+    const indexes = new Set<number>([active]);
+
+    // Neighbors (works with loop duplicates too)
+    indexes.add((active + 1) % slides.length);
+    indexes.add((active - 1 + slides.length) % slides.length);
+
+    indexes.forEach((i) => hydrateSlide(slides[i], i === active));
+  };
+
   const syncStageMetrics = (hall: HTMLElement, stage: HTMLElement) => {
     const rect = stage.getBoundingClientRect();
-    // Leave room for frame rail + mat so the photo itself never clips
     const chrome = window.matchMedia("(max-height: 720px)").matches ? 40 : 64;
     const photoMaxH = Math.max(120, Math.floor(rect.height - chrome));
     const photoMaxW = Math.max(120, Math.floor(rect.width - chrome));
@@ -207,10 +268,12 @@ const total = photos?.length ?? 0;
     keyboard: { enabled: true },
     on: {
       init(swiper: InstanceType<typeof Swiper>) {
+        hydrateAround(swiper);
         if (counterEl) counterEl.textContent = String(swiper.realIndex + 1);
         runProgress(swiper, progressFill);
       },
       slideChange(swiper: InstanceType<typeof Swiper>) {
+        hydrateAround(swiper);
         if (counterEl) counterEl.textContent = String(swiper.realIndex + 1);
         runProgress(swiper, progressFill);
       },
@@ -231,6 +294,10 @@ const total = photos?.length ?? 0;
     if (swiperContainer.dataset.randomize === "true") {
       shuffleSlides(swiperContainer);
     }
+
+    // Hydrate the post-shuffle first slide ASAP (before Swiper finishes init)
+    const firstSlide = swiperContainer.querySelector(".swiper-slide");
+    hydrateSlide(firstSlide, true);
 
     const hall = swiperContainer.closest(".gallery-hall") as HTMLElement | null;
     if (hall) bindStageObserver(hall);
@@ -269,7 +336,6 @@ const total = photos?.length ?? 0;
     --wall-deep: #ebe4d8;
     --wall-light: #f7f3ec;
     --plaque: #6d5f4e;
-    /* Safe defaults before ResizeObserver measures the stage */
     --photo-max-h: calc(100dvh - 10.5rem);
     --photo-max-w: min(92vw, 1180px);
 
@@ -381,9 +447,9 @@ const total = photos?.length ?? 0;
     max-height: 100%;
     min-height: 0;
     line-height: 0;
+    background: rgba(44, 38, 33, 0.04);
   }
 
-  /* Live stage metrics keep the full photo visible as height changes */
   .artwork {
     display: block;
     width: auto;
@@ -391,6 +457,12 @@ const total = photos?.length ?? 0;
     max-width: var(--photo-max-w);
     max-height: var(--photo-max-h);
     object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .artwork.is-hydrated {
+    opacity: 1;
   }
 
   .gallery-plaque {
@@ -550,6 +622,11 @@ const total = photos?.length ?? 0;
   @media (prefers-reduced-motion: reduce) {
     .artwork-frame {
       animation: none;
+    }
+
+    .artwork {
+      transition: none;
+      opacity: 1;
     }
   }
 </style>

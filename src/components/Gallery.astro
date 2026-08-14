@@ -1,5 +1,9 @@
 ---
-import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import {
+  optimizeLightboxPhoto,
+  optimizeThumbPhoto,
+} from "../utils/optimizePhoto";
 
 export interface Props {
   photos: Array<any>;
@@ -10,12 +14,10 @@ export interface Props {
 let { photos, newestFirst = true, biggerPictures = false } = Astro.props;
 
 if (newestFirst) {
-  photos.reverse();
+  photos = [...photos].reverse();
 }
 
-export let classList: Array<string>;
-
-classList = biggerPictures
+const classList = biggerPictures
   ? [
       "min-[2800px]:columns-6",
       "min-[2400px]:columns-5",
@@ -43,40 +45,65 @@ classList = biggerPictures
       "lg:gap-5",
       "break-inside-avoid",
     ];
+
+const items = await Promise.all(
+  (photos ?? []).map(async (photo: any, index: number) => {
+    const picture = (await photo.default) as ImageMetadata;
+    const fileName = picture.src.split("/").pop() ?? "";
+    const thumb = await optimizeThumbPhoto(picture, biggerPictures);
+    const lightboxSrc = await optimizeLightboxPhoto(picture);
+    const lightboxPhotoUrl = import.meta.env.PROD
+      ? `https://ojoanalogo.com${lightboxSrc}`
+      : lightboxSrc;
+
+    return {
+      fileName,
+      thumb,
+      lightboxPhotoUrl,
+      // Eager-load the first few thumbs above the fold
+      eager: index < 4,
+    };
+  }),
+);
 ---
 
 <div class={classList.join(" ")}>
   {
-    photos?.map(async (photo: any) => {
-      const picture = await photo.default;
-      const fileName = picture.src.split("/").pop();
-      // photoURL fix for production
-      const lightboxPhotoUrl = import.meta.env.PROD
-        ? `https://ojoanalogo.com${photo.default.src}`
-        : `${photo.default.src}`;
-
-      return (
-        <div class="break-inside-avoid mb-4 md:mb-5 lg:mb-6">
-          <a
-            class="cursor-pointer block aspect-auto"
-            data-href={lightboxPhotoUrl}
-            data-fslightbox
-            data-umami-event="Photo click"
-            data-umami-event-photo-id={fileName}
-          >
-            <Image
-              class="w-full h-auto object-cover hover:shadow-md ease-in duration-300 rounded-sm"
-              src={picture}
-              decoding="async"
-              loading="lazy"
-              alt=""
-              quality={"mid"}
-              width={picture.width / 2}
+    items.map((item) => (
+      <div class="break-inside-avoid mb-4 md:mb-5 lg:mb-6">
+        <a
+          class="cursor-pointer block aspect-auto"
+          data-href={item.lightboxPhotoUrl}
+          data-fslightbox
+          data-umami-event="Photo click"
+          data-umami-event-photo-id={item.fileName}
+        >
+          <picture>
+            <source
+              type="image/avif"
+              srcset={item.thumb.avifSrcSet}
+              sizes={item.thumb.sizes}
             />
-          </a>
-        </div>
-      );
-    })
+            <source
+              type="image/webp"
+              srcset={item.thumb.webpSrcSet}
+              sizes={item.thumb.sizes}
+            />
+            <img
+              class="w-full h-auto object-cover hover:shadow-md ease-in duration-300 rounded-sm"
+              src={item.thumb.webpSrc}
+              srcset={item.thumb.webpSrcSet}
+              sizes={item.thumb.sizes}
+              width={item.thumb.width}
+              height={item.thumb.height}
+              decoding="async"
+              loading={item.eager ? "eager" : "lazy"}
+              alt=""
+            />
+          </picture>
+        </a>
+      </div>
+    ))
   }
 </div>
 
