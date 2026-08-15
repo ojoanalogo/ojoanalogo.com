@@ -1,6 +1,6 @@
 ---
-import { Image } from "astro:assets";
 import type { Photo } from "../types/photos";
+import { optimizeDisplayPhoto } from "../utils/optimizePhoto";
 
 export interface Props {
   photos: Array<Photo>;
@@ -9,46 +9,63 @@ export interface Props {
 
 const { photos, randomize = false } = Astro.props;
 const totalSlides = photos?.length ?? 0;
+
+const slides = await Promise.all(
+  (photos ?? []).map(async (photo) => {
+    const fileName = photo.src.src.split("/").pop() ?? "";
+    const sources = await optimizeDisplayPhoto(photo.src, "(max-width: 768px) 90vw, (max-width: 1280px) 70vw, 60vw");
+    return { ...sources, alt: photo.alt, fileName };
+  }),
+);
 ---
 
 <div class="gallery-showcase">
   <div class="swiper showcase-swiper" data-randomize={randomize}>
     <div class="swiper-wrapper">
       {
-        photos?.map(async (photo: Photo, index: number) => {
-          const fileName = photo.src.src.split("/").pop();
-
-          return (
-            <div class="swiper-slide">
-              <div class="slide-stage">
-                <a
-                  class="art-piece"
-                  data-umami-event="Carousel photo click"
-                  data-umami-event-photo-id={fileName}
-                >
-                  <div class="frame-outer">
-                    <div class="frame-fillet">
-                      <div class="frame-mat">
-                        <div class="frame-window">
-                          <Image
-                            class="framed-photo"
-                            src={photo.src}
-                            decoding="async"
-                            loading={index === 0 ? "eager" : "lazy"}
-                            alt={photo.alt}
-                            widths={[400, 700, 900, 1400, 1800]}
-                            sizes="(max-width: 768px) 90vw, (max-width: 1280px) 70vw, 60vw"
-                            quality={"high"}
+        slides.map((slide) => (
+          <div class="swiper-slide">
+            <div class="slide-stage">
+              <a
+                class="art-piece"
+                data-umami-event="Carousel photo click"
+                data-umami-event-photo-id={slide.fileName}
+              >
+                <div class="frame-outer">
+                  <div class="frame-fillet">
+                    <div class="frame-mat">
+                      <div class="frame-window">
+                        <picture>
+                          <source
+                            type="image/avif"
+                            data-srcset={slide.avifSrcSet}
+                            sizes={slide.sizes}
                           />
-                        </div>
+                          <source
+                            type="image/webp"
+                            data-srcset={slide.webpSrcSet}
+                            sizes={slide.sizes}
+                          />
+                          <img
+                            class="framed-photo"
+                            data-src={slide.webpSrc}
+                            data-srcset={slide.webpSrcSet}
+                            data-sizes={slide.sizes}
+                            width={slide.width}
+                            height={slide.height}
+                            alt={slide.alt}
+                            decoding="async"
+                            draggable="false"
+                          />
+                        </picture>
                       </div>
                     </div>
                   </div>
-                </a>
-              </div>
+                </div>
+              </a>
             </div>
-          );
-        })
+          </div>
+        ))
       }
     </div>
 
@@ -104,6 +121,48 @@ const totalSlides = photos?.length ?? 0;
     slides.forEach((slide) => wrapper.appendChild(slide));
   };
 
+  /** Only hydrate active ± neighbors — fade/walk slides share the viewport so native lazy fails */
+  const hydrateSlide = (slide: Element | null | undefined, eager = false): void => {
+    if (!slide) return;
+    const picture = slide.querySelector("picture");
+    const img = slide.querySelector("img.framed-photo") as HTMLImageElement | null;
+    if (!img || img.dataset.hydrated === "true") return;
+
+    picture?.querySelectorAll("source[data-srcset]").forEach((source) => {
+      const el = source as HTMLSourceElement;
+      el.srcset = el.dataset.srcset || "";
+      el.removeAttribute("data-srcset");
+    });
+
+    if (img.dataset.srcset) {
+      img.srcset = img.dataset.srcset;
+      img.removeAttribute("data-srcset");
+    }
+    if (img.dataset.sizes) {
+      img.sizes = img.dataset.sizes;
+      img.removeAttribute("data-sizes");
+    }
+    if (img.dataset.src) {
+      img.src = img.dataset.src;
+      img.removeAttribute("data-src");
+    }
+
+    if (eager) img.setAttribute("fetchpriority", "high");
+    img.dataset.hydrated = "true";
+    img.classList.add("is-hydrated");
+  };
+
+  const hydrateAround = (swiper: Swiper): void => {
+    const slides = swiper.slides;
+    if (!slides?.length) return;
+
+    const active = swiper.activeIndex;
+    const indexes = new Set<number>([active]);
+    indexes.add((active + 1) % slides.length);
+    indexes.add((active - 1 + slides.length) % slides.length);
+    indexes.forEach((i) => hydrateSlide(slides[i], i === active));
+  };
+
   const destroySwiper = (): void => {
     if (swiperInstance) {
       swiperInstance.destroy(true, true);
@@ -148,6 +207,9 @@ const totalSlides = photos?.length ?? 0;
     },
     keyboard: { enabled: true },
     on: {
+      init: (swiper: Swiper) => {
+        hydrateAround(swiper);
+      },
       beforeTransitionStart: (_swiper: Swiper, speed: number) => {
         lastSpeed = speed;
       },
@@ -155,6 +217,7 @@ const totalSlides = photos?.length ?? 0;
       slidePrevTransitionStart: (swiper: Swiper) => applyMotion(swiper, "prev"),
       transitionEnd: (swiper: Swiper) => clearMotion(swiper),
       slideChange: (swiper: Swiper) => {
+        hydrateAround(swiper);
         if (counterEl) {
           counterEl.textContent = (swiper.realIndex + 1).toString();
         }
@@ -172,6 +235,9 @@ const totalSlides = photos?.length ?? 0;
     if (swiperContainer.dataset.randomize === "true") {
       shuffleSlides(swiperContainer);
     }
+
+    // Hydrate the post-shuffle first slide ASAP
+    hydrateSlide(swiperContainer.querySelector(".swiper-slide"), true);
 
     const counterEl = document.querySelector(".current-slide");
     swiperInstance = new Swiper(".showcase-swiper", createSwiperConfig(counterEl));
@@ -333,6 +399,12 @@ const totalSlides = photos?.length ?? 0;
     width: auto;
     height: auto;
     object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .framed-photo.is-hydrated {
+    opacity: 1;
   }
 
   /* Side-to-side gallery walk for autoplay, arrows, keyboard, and swipe. */
@@ -403,6 +475,11 @@ const totalSlides = photos?.length ?? 0;
   @media (prefers-reduced-motion: reduce) {
     .art-piece {
       animation: none !important;
+    }
+
+    .framed-photo {
+      transition: none;
+      opacity: 1;
     }
   }
 
