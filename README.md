@@ -40,6 +40,18 @@ So: **R2 = binaries**, **git = the registry** (URLs + text).
 
 R2 credentials live in `public/admin/config.yml` (Access Key ID is public by design; the Secret is entered once in the CMS UI and stays in the browser).
 
+## Design concept: Infinite Folio
+
+The UI is an endless, pannable photo wall (`src/components/ProximityWall.astro`,
+engine in `src/scripts/wall.ts`): drag, scroll or use the arrow keys to move the
+plane; frames grow as they approach the centre. Album pages switch between
+**Muro** (wall) and **Secuencia** (a vertical stream that hands off to the next
+album). The viewer lives in `src/scripts/lightbox.ts`.
+
+While the R2 archive is small, `CONCEPT_PLACEHOLDERS` in `src/data/concept.ts`
+pads walls with Unsplash film-look placeholders (credited in the viewer). Set it
+to `false` to render only CMS photos — no CMS data is touched either way.
+
 ## Stack notes
 
 - Node `24.16` / pnpm `11` (see `.nvmrc`)

@@ -1,103 +1,376 @@
 ---
-import IconInstagram from "../components/IconInstagram.astro";
-import site from "../data/site.json";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import IconInstagram from '../components/IconInstagram.astro';
+import ProximityWall from '../components/ProximityWall.astro';
+import { CONCEPT_PLACEHOLDERS, padWithPlaceholders } from '../data/concept';
+import site from '../data/site.json';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAlbums } from '../utils/albums';
+import { albumWallPhotos, homeWallPhotos } from '../utils/wallPhotos';
 
-const portraitUrl = site.portraitUrl?.trim() || "";
+const portraitUrl = site.portraitUrl?.trim() || '';
+const albums = await getAlbums();
+const wallPhotos = portraitUrl ? [] : await homeWallPhotos(albums, 18);
+
+const index = await Promise.all(
+  albums.map(async (album) => {
+    const real = await albumWallPhotos(album);
+    const thumbs = CONCEPT_PLACEHOLDERS
+      ? padWithPlaceholders(real.slice(0, 3), 3, { seed: album.slug, prefer: album.slug })
+      : real.slice(0, 3);
+    return { album, count: real.length, thumbs };
+  }),
+);
 ---
 
-<BaseLayout sideBarActiveItemID="about">
-  <div class="flex-1 flex items-center justify-center min-h-0">
-    <div class="max-w-6xl mx-auto w-full">
-      <!-- Hero Section -->
-      <section class="py-8">
-        <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div class="lg:w-2/5 flex-shrink-0">
-            {
-              portraitUrl ? (
-                <img
-                  class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
-                  src={portraitUrl}
-                  alt="Alfonso Reyes - Fotógrafo analógico"
-                  width={700}
-                  height={875}
-                  decoding="async"
-                />
-              ) : (
-                <div
-                  class="w-full rounded-2xl aspect-[4/5] bg-beige-200"
-                  aria-hidden="true"
-                />
-              )
-            }
-          </div>
-
-          <div class="lg:w-3/5 space-y-8">
-            <div class="space-y-4">
-              <div class="text-beige-800 text-sm font-medium tracking-wide">
-                Hola 👋
-              </div>
-              <h1
-                class="text-4xl lg:text-6xl font-bold font-display text-beige-900 leading-tight"
-              >
-                Soy Alfonso Reyes
-              </h1>
-              <p
-                class="text-xl lg:text-2xl text-beige-700 font-medium leading-relaxed"
-              >
-                Ingeniero de software 👨🏽‍💻 y fotógrafo.
-              </p>
-            </div>
-
-            <div class="prose prose-lg prose-beige max-w-none">
-              <p class="text-lg text-beige-800 leading-relaxed">
-                Mi medio favorito para tomar fotos es la fotografía análoga,
-                pues encuentro fascinante el elemento sorpresa y la paciencia
-                que conlleva, atributos que siento han estado desapareciendo a
-                favor de experiencias efímeras y breves.
-              </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 pt-4">
-              <a
-                class="inline-flex items-center justify-center gap-2 flex-row
-                px-8 py-3 bg-beige-800 text-beige-50 rounded-xl font-medium
-                tracking-wide uppercase transition-all duration-300 hover:bg-beige-700
-                hover:shadow-lg"
-                href="https://instagram.com/ojo.analogo/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <IconInstagram class="w-5 h-5" />
-                Instagram
-              </a>
-              <a
-                href="mailto:hola@ojoanalogo.com"
-                target="_blank"
-                class="inline-flex items-center justify-center gap-2 flex-row px-8
-                py-3 border-2 border-beige-300 text-beige-700 rounded-xl
-                font-medium tracking-wide uppercase transition-all duration-300
-                hover:border-beige-500 hover:bg-beige-100 hover:shadow-lg"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                Contáctame
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+<BaseLayout title="Quién soy" active="about">
+  <section class="about">
+    <div class="about-frame">
+      {
+        portraitUrl ? (
+          <img
+            class="about-portrait"
+            src={portraitUrl}
+            alt="Alfonso Reyes — fotógrafo analógico"
+            width={800}
+            height={1000}
+            decoding="async"
+          />
+        ) : wallPhotos.length > 0 ? (
+          <ProximityWall
+            photos={wallPhotos}
+            variant="contained"
+            drift
+            label="Muestra del archivo — arrastra para explorar"
+          />
+        ) : (
+          <div class="about-portrait about-portrait--empty" aria-hidden="true" />
+        )
+      }
+      <p class="about-frame-cap label-mono">
+        {portraitUrl ? 'Retrato' : 'Archivo · arrastra para explorar'}
+      </p>
     </div>
-  </div>
+
+    <div class="about-copy">
+      <p class="label-mono text-mute">Quién soy</p>
+      <h1 class="about-title">
+        Hola, soy<br />
+        Alfonso Reyes.
+      </h1>
+      <p class="about-lede">
+        Ingeniero de software y <em>fotógrafo</em>.
+      </p>
+      <p class="about-body">
+        Mi medio favorito para tomar fotos es la fotografía análoga, pues encuentro fascinante el
+        elemento sorpresa y la paciencia que conlleva, atributos que siento han estado
+        desapareciendo a favor de experiencias efímeras y breves.
+      </p>
+
+      <div class="about-actions">
+        <a class="btn-ink" href="https://instagram.com/ojo.analogo/" target="_blank" rel="noreferrer">
+          <IconInstagram class="w-4 h-4" />
+          Instagram
+        </a>
+        <a class="btn-line" href="mailto:hola@ojoanalogo.com">Contáctame</a>
+        <a class="about-other" href="https://alfon.so" target="_blank" rel="noreferrer">
+          Mi otro yo ↗
+        </a>
+      </div>
+
+      <dl class="about-facts">
+        <div>
+          <dt class="label-mono">Medio</dt>
+          <dd>Película</dd>
+        </div>
+        <div>
+          <dt class="label-mono">Álbumes</dt>
+          <dd>{String(albums.length).padStart(2, '0')}</dd>
+        </div>
+        <div>
+          <dt class="label-mono">Correo</dt>
+          <dd><a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a></dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {
+    index.length > 0 && (
+      <section class="index" aria-labelledby="index-title">
+        <header class="index-head">
+          <h2 id="index-title" class="label-mono">Índice de rollos</h2>
+          <span class="label-mono text-mute">{String(index.length).padStart(2, '0')} álbumes</span>
+        </header>
+        <ol class="index-list">
+          {index.map(({ album, count, thumbs }) => (
+            <li>
+              <a class="index-row" href={album.href}>
+                <span class="index-num label-mono">Nº {album.number}</span>
+                <span class="index-title">{album.title}</span>
+                <span class="index-desc">{album.description ?? ''}</span>
+                <span class="index-thumbs" aria-hidden="true">
+                  {thumbs.map((p) => (
+                    <img src={p.src} alt="" loading="lazy" decoding="async" />
+                  ))}
+                </span>
+                <span class="index-meta label-mono">
+                  {album.year ?? '—'} · {String(count).padStart(2, '0')} {count === 1 ? 'foto' : 'fotos'}
+                </span>
+                <span class="index-arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </section>
+    )
+  }
 </BaseLayout>
+
+<style>
+  .about {
+    display: grid;
+    gap: 40px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 128px 24px 48px;
+  }
+
+  @media (min-width: 960px) {
+    .about {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      align-items: center;
+      gap: 72px;
+      min-height: 100dvh;
+      padding-top: 120px;
+    }
+  }
+
+  .about-frame {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    width: 100%;
+    max-width: 560px;
+    overflow: hidden;
+    background: var(--color-paper-deep);
+  }
+
+  .about-frame :global(.wall) {
+    background: var(--color-paper-deep);
+  }
+
+  .about-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .about-frame-cap {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2;
+    padding: 5px 8px;
+    border-radius: 7px;
+    background: rgb(255 255 255 / 0.9);
+    pointer-events: none;
+  }
+
+  .about-copy {
+    display: grid;
+    gap: 22px;
+    align-content: center;
+  }
+
+  .about-title {
+    font-size: clamp(48px, 7vw, 104px);
+    font-weight: 600;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    margin-left: -0.04em;
+  }
+
+  .about-lede {
+    font-size: clamp(22px, 2.4vw, 30px);
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.025em;
+  }
+
+  .about-lede em {
+    font-family: var(--font-serif);
+    font-size: 1.18em;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  .about-body {
+    max-width: 52ch;
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+  }
+
+  .about-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+    padding-top: 4px;
+  }
+
+  .about-other {
+    padding: 0 6px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-color: var(--color-line);
+    text-underline-offset: 4px;
+    transition: text-decoration-color 0.2s ease;
+  }
+
+  .about-other:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .about-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, auto));
+    justify-content: start;
+    gap: 12px 40px;
+    margin-top: 12px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .about-facts dt {
+    color: var(--color-mute);
+  }
+
+  .about-facts dd {
+    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .index {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+  }
+
+  .index-head {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--color-ink);
+  }
+
+  .index-row {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) auto 24px;
+    grid-template-areas: 'num title thumbs arrow' 'num desc meta arrow';
+    align-items: center;
+    column-gap: 20px;
+    row-gap: 4px;
+    padding: 22px 8px;
+    border-bottom: 1px solid var(--color-line);
+    transition:
+      background-color 0.3s ease,
+      padding 0.5s var(--ease-folio);
+  }
+
+  .index-row:hover {
+    background: var(--color-card);
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .index-num {
+    grid-area: num;
+    color: var(--color-mute);
+  }
+
+  .index-title {
+    grid-area: title;
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.028em;
+  }
+
+  .index-desc {
+    grid-area: desc;
+    font-size: 14.5px;
+    color: var(--color-ink-soft);
+  }
+
+  .index-thumbs {
+    grid-area: thumbs;
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .index-thumbs img {
+    width: auto;
+    min-width: 30px;
+    height: 44px;
+    background: rgb(26 26 26 / 0.06);
+    filter: grayscale(1);
+    transition:
+      filter 0.4s ease,
+      transform 0.5s var(--ease-folio);
+  }
+
+  .index-row:hover .index-thumbs img {
+    filter: none;
+    transform: translateY(-3px);
+  }
+
+  .index-meta {
+    grid-area: meta;
+    justify-self: end;
+    color: var(--color-mute);
+  }
+
+  .index-arrow {
+    grid-area: arrow;
+    font-size: 20px;
+    transition: transform 0.5s var(--ease-folio);
+  }
+
+  .index-row:hover .index-arrow {
+    transform: translateX(4px);
+  }
+
+  @media (max-width: 640px) {
+    .about {
+      padding: 92px 16px 32px;
+    }
+
+    .about-facts {
+      grid-template-columns: repeat(2, minmax(0, auto));
+    }
+
+    .index {
+      padding: 32px 16px 16px;
+    }
+
+    .index-row {
+      grid-template-columns: 52px minmax(0, 1fr) 20px;
+      grid-template-areas: 'num title arrow' 'num meta arrow';
+    }
+
+    .index-desc,
+    .index-thumbs {
+      display: none;
+    }
+
+    .index-meta {
+      justify-self: start;
+    }
+  }
+</style>

@@ -1,0 +1,256 @@
+---
+import type { WallPhoto } from '../types/wall';
+
+export interface Props {
+  photos: WallPhoto[];
+  /** 'full' fills the viewport; 'contained' fills its positioned parent. */
+  variant?: 'full' | 'contained';
+  label?: string;
+  /** Slow self-panning (contained walls). */
+  drift?: boolean;
+  /** Muted presentation behind an overlay (404). */
+  muted?: boolean;
+  class?: string;
+}
+
+const {
+  photos,
+  variant = 'full',
+  label = 'Muro de fotografías',
+  drift = false,
+  muted = false,
+  class: className,
+} = Astro.props;
+
+// JSON inside <script> must not be able to close the tag.
+const json = JSON.stringify(photos).replace(/</g, '\\u003c');
+const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div
+  class:list={['wall', `wall--${variant}`, muted && 'wall--muted', className]}
+  data-wall
+  data-variant={variant}
+  data-drift={drift ? 'true' : undefined}
+  data-capture-wheel={variant === 'full' ? 'true' : 'false'}
+  role="region"
+  aria-roledescription="muro de fotografías"
+  aria-label={label}
+  aria-describedby={hintId}
+  tabindex="0"
+>
+  <p id={hintId} class="sr-only">
+    Arrastra o usa las flechas del teclado para recorrer el muro. Enter abre la fotografía del centro.
+  </p>
+  <div class="wall-layer" data-wall-layer></div>
+  <div class="wall-cursor" data-wall-cursor aria-hidden="true"></div>
+  <script is:inline type="application/json" data-wall-data set:html={json} />
+  <ul class="sr-only">
+    {photos.map((p) => <li>{p.album ? `${p.album.title}: ${p.alt}` : p.alt}</li>)}
+  </ul>
+  <noscript>
+    <ul class="wall-fallback">
+      {
+        photos.map((p) => (
+          <li>
+            <img src={p.src} alt={p.alt} loading="lazy" decoding="async" />
+          </li>
+        ))
+      }
+    </ul>
+  </noscript>
+</div>
+
+<script>
+  import { openLightbox } from '../scripts/lightbox';
+  import { ProximityWall } from '../scripts/wall';
+  import type { WallPhoto } from '../types/wall';
+
+  let walls: ProximityWall[] = [];
+
+  const fmt = (v: number) => {
+    const n = Math.round(-v);
+    return `${n < 0 ? '−' : '+'}${String(Math.abs(n)).padStart(4, '0')}`;
+  };
+
+  function mount() {
+    unmount();
+    document.querySelectorAll<HTMLElement>('[data-wall]').forEach((root) => {
+      const raw = root.querySelector('[data-wall-data]')?.textContent;
+      if (!raw) return;
+      let photos: WallPhoto[];
+      try {
+        photos = JSON.parse(raw);
+      } catch {
+        return;
+      }
+      if (!photos.length) return;
+
+      const variant = root.dataset.variant === 'contained' ? 'contained' : 'full';
+      const coords = variant === 'full' ? document.querySelector<HTMLElement>('[data-wall-coords]') : null;
+      let lastCoords = '';
+
+      walls.push(
+        new ProximityWall(root, photos, {
+          variant,
+          drift: root.dataset.drift === 'true',
+          captureWheel: root.dataset.captureWheel === 'true',
+          onOpen: (index, rect, src) => openLightbox(photos, index, { rect, src, returnFocus: root }),
+          onMove: coords
+            ? (x, y) => {
+                const text = `x ${fmt(x)} · y ${fmt(-y)}`;
+                if (text !== lastCoords) {
+                  lastCoords = text;
+                  coords.textContent = text;
+                }
+              }
+            : undefined,
+        }),
+      );
+    });
+  }
+
+  function unmount() {
+    walls.forEach((w) => w.destroy());
+    walls = [];
+  }
+
+  document.addEventListener('astro:page-load', mount);
+  document.addEventListener('astro:before-swap', unmount);
+</script>
+
+<style>
+  .wall {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    overscroll-behavior: contain;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    cursor: grab;
+    background: var(--color-paper);
+    outline: none;
+  }
+
+  .wall--contained {
+    position: absolute;
+    /* Inside a scrolling page: vertical swipes scroll, horizontal ones pan. */
+    touch-action: pan-y;
+  }
+
+  .wall:global(.is-dragging) {
+    cursor: grabbing;
+  }
+
+  .wall:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .wall-layer {
+    position: absolute;
+    inset: 0;
+  }
+
+  .wall--muted .wall-layer {
+    opacity: 0.32;
+    filter: grayscale(1) contrast(0.9);
+  }
+
+  .wall-layer :global(.wall-tile) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: center center;
+    will-change: transform;
+    background: rgb(26 26 26 / 0.05);
+    cursor: pointer;
+    contain: layout paint;
+  }
+
+  .wall:global(.is-dragging) .wall-layer :global(.wall-tile) {
+    cursor: grabbing;
+  }
+
+  .wall-layer :global(.wall-tile img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+
+  .wall-layer :global(.wall-tile.is-loaded img) {
+    opacity: 1;
+  }
+
+  .wall-layer :global(.wall-tile.is-centre) {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 4px;
+  }
+
+  .wall-cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 280px;
+    padding: 6px 10px 6px 6px;
+    border-radius: 9px;
+    background: var(--color-ink);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.85;
+    transform-origin: top left;
+    transition:
+      opacity 0.2s ease,
+      scale 0.35s var(--ease-folio);
+  }
+
+  .wall-cursor:global(.is-on) {
+    opacity: 1;
+    scale: 1;
+  }
+
+  .wall-cursor :global(span:last-child) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wall-cursor :global(.wall-cursor-num) {
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: rgb(255 255 255 / 0.14);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+
+  .wall-fallback {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px;
+    padding: 96px 24px 24px;
+    overflow: auto;
+  }
+
+  .wall-fallback img {
+    width: 100%;
+    height: auto;
+  }
+</style>

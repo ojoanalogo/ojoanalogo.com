@@ -1,0 +1,17 @@
+---
+/** "ojo" mark — an open eye drawn on the same footprint as an ∞ glyph. */
+export interface Props {
+  class?: string;
+}
+
+const { class: className = 'w-6 h-6' } = Astro.props;
+---
+
+<svg class={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <path
+    d="M2 12c2.6-4.1 6-6.2 10-6.2s7.4 2.1 10 6.2c-2.6 4.1-6 6.2-10 6.2S4.6 16.1 2 12Z"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linejoin="round"></path>
+  <circle cx="12" cy="12" r="3.1" fill="currentColor"></circle>
+</svg>
