@@ -1,0 +1,46 @@
+---
+import type { Album } from "../utils/albums";
+import { withPlaceholders } from "../data/placeholders";
+import Photo from "./Photo.astro";
+
+export interface Props {
+  album: Album;
+  index: number;
+}
+
+const { album, index } = Astro.props;
+const count = album.photos.length;
+const cover = withPlaceholders(album.photos, album.slug, 1).photos[0];
+const subtitle =
+  album.description ?? (count > 0 ? `${count} ${count === 1 ? "fotografía" : "fotografías"}` : "en revelado");
+---
+
+<a
+  class:list={["card", count === 0 && cover && "is-sample"]}
+  href={`/${album.slug}`}
+  data-reveal
+  style={`--i:${index % 4}`}
+>
+  <div class="card-media">
+    {
+      cover ? (
+        <Photo
+          class="contain"
+          src={cover.image}
+          alt={cover.alt ?? album.title}
+          sizes="(max-width: 520px) 92vw, (max-width: 820px) 46vw, (max-width: 1100px) 31vw, 24vw"
+          transition:name={`cover-${album.slug}`}
+        />
+      ) : (
+        <div class="card-empty mono">sin fotos</div>
+      )
+    }
+  </div>
+  <div class="card-meta">
+    <div class="row">
+      <p>{album.title}</p>
+      {album.year && <p class="mono muted">{album.year}</p>}
+    </div>
+    <p>{subtitle}</p>
+  </div>
+</a>

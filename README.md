@@ -45,3 +45,7 @@ R2 credentials live in `public/admin/config.yml` (Access Key ID is public by des
 - Node `24.16` / pnpm `11` (see `.nvmrc`)
 - Deploy: Cloudflare Pages (`pnpm build` → `dist`, `NODE_VERSION=24.16.0`)
 - CI: `.github/workflows/ci.yml` (check + build only)
+
+## Concept branch: Sienna Yards redesign
+
+Minimal index-style portfolio (grey "frame" panels, all-caps Instrument Sans + Fragment Mono, Framer-like appear motion). Albums and the about portrait that have no CMS photos yet are previewed with muted Unsplash sample frames. Set `DEMO_PLACEHOLDERS = false` in `src/data/placeholders.ts` (or upload real photos) to remove them; CMS data is never touched.

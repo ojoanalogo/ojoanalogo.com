@@ -1,29 +1,35 @@
 ---
-import CarouselGallery from "../components/CarouselGallery.astro";
+import AlbumCard from "../components/AlbumCard.astro";
+import HeroReel from "../components/HeroReel.astro";
 import { getFeaturedPhotos } from "../data/featured";
+import { DEMO_PLACEHOLDERS, placeholderSet } from "../data/placeholders";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import type { Photo } from "../types/photos";
+import { getAlbums } from "../utils/albums";
 
-const photos = getFeaturedPhotos();
+const featured = getFeaturedPhotos();
+const heroPhotos: Photo[] =
+  featured.length > 0 || !DEMO_PLACEHOLDERS
+    ? featured
+    : placeholderSet().map((p) => ({ src: p.image, alt: p.alt ?? "" }));
+
+const albums = await getAlbums();
 ---
 
-<BaseLayout sideBarActiveItemID="home" compactFooter={photos.length > 0}>
-  <div class="flex-1 flex flex-col min-h-0 py-3 md:py-4">
-    <div class="flex-1 flex flex-col min-h-0 w-full max-w-[95%] lg:max-w-[92%] xl:max-w-[88%] mx-auto">
-      {
-        photos.length > 0 ? (
-          <CarouselGallery photos={photos} randomize={true} />
-        ) : (
-          <div class="flex-1 flex items-center justify-center text-center px-6">
-            <p class="text-beige-700 text-lg">
-              Sin fotos en el carrusel todavía. Agrégalas desde{" "}
-              <a class="underline" href="/admin/" data-astro-reload>
-                /admin
-              </a>
-              .
-            </p>
-          </div>
-        )
-      }
-    </div>
-  </div>
+<BaseLayout>
+  <HeroReel photos={heroPhotos} caption="Fotógrafo analógico, ingeniero de software" />
+
+  <section id="albumes" class="albums" aria-label="Álbumes">
+    {
+      albums.length > 0 ? (
+        <div class="album-grid">
+          {albums.map((album, i) => (
+            <AlbumCard album={album} index={i} />
+          ))}
+        </div>
+      ) : (
+        <p class="albums-empty">Sin álbumes todavía.</p>
+      )
+    }
+  </section>
 </BaseLayout>

@@ -1,0 +1,146 @@
+---
+import type { Photo as PhotoItem } from "../types/photos";
+import { pad2 } from "../utils/albums";
+import Photo from "./Photo.astro";
+
+export interface Props {
+  photos: PhotoItem[];
+  caption: string;
+  randomize?: boolean;
+}
+
+const { photos, caption, randomize = true } = Astro.props;
+const total = photos.length;
+const sizes = "(max-width: 640px) 84vw, 66vw";
+---
+
+<section class="hero" aria-label="Fotografías destacadas">
+  <div class="panel hero-panel">
+    {
+      total > 0 ? (
+        <div
+          class="hero-stage"
+          data-reel
+          data-randomize={randomize && total > 1 ? "true" : undefined}
+          data-static={total < 2 ? "" : undefined}
+          role={total > 1 ? "button" : undefined}
+          tabindex={total > 1 ? 0 : undefined}
+          aria-label={total > 1 ? "Siguiente fotografía" : undefined}
+        >
+          {photos.map((photo, i) => (
+            <figure class:list={["hero-slide", i === 0 && "is-active"]} data-slide>
+              <Photo
+                src={photo.src}
+                alt={photo.alt}
+                sizes={sizes}
+                priority={i === 0}
+                loading={i === 0 ? "eager" : "lazy"}
+              />
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <div class="hero-empty">
+          <p>
+            Sin fotos en el carrusel todavía. Agrégalas desde{" "}
+            <a href="/admin/" data-astro-reload>
+              /admin
+            </a>
+            .
+          </p>
+        </div>
+      )
+    }
+
+    <a class="tab" href="#albumes">
+      ver álbumes <span class="arrow" aria-hidden="true">↓</span>
+    </a>
+  </div>
+
+  <div class="hero-caption row">
+    <p>{caption}</p>
+    {
+      total > 1 && (
+        <p class="mono" aria-live="polite">
+          <span data-reel-current>01</span>
+          <span class="muted"> / {pad2(total)}</span>
+        </p>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  const INTERVAL = 5600;
+  let timer: number | undefined;
+
+  function stop() {
+    if (timer) window.clearInterval(timer);
+    timer = undefined;
+  }
+
+  function initReel() {
+    stop();
+    const reel = document.querySelector<HTMLElement>("[data-reel]");
+    if (!reel || reel.dataset.ready !== undefined) return;
+
+    const slides = Array.from(reel.querySelectorAll<HTMLElement>("[data-slide]"));
+    const counter = document.querySelector<HTMLElement>("[data-reel-current]");
+    let index = 0;
+
+    // Start on a random frame so repeat visits feel like flipping a contact sheet.
+    if (reel.dataset.randomize === "true" && slides.length > 1) {
+      reel.dataset.instant = "";
+      slides[0].classList.remove("is-active");
+      index = Math.floor(Math.random() * slides.length);
+      slides[index].classList.add("is-active");
+      slides[index].querySelector("img")?.setAttribute("loading", "eager");
+      if (counter) counter.textContent = String(index + 1).padStart(2, "0");
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => delete reel.dataset.instant),
+      );
+    }
+    reel.dataset.ready = "";
+    if (slides.length < 2) return;
+
+    const show = (next: number) => {
+      slides[index].classList.remove("is-active");
+      index = (next + slides.length) % slides.length;
+      const slide = slides[index];
+      slide.querySelector("img")?.setAttribute("loading", "eager");
+      slide.classList.add("is-active");
+      // Preload the following frame so the crossfade never reveals a blank panel.
+      slides[(index + 1) % slides.length].querySelector("img")?.setAttribute("loading", "eager");
+      if (counter) counter.textContent = String(index + 1).padStart(2, "0");
+    };
+
+    const start = () => {
+      stop();
+      timer = window.setInterval(() => {
+        if (!document.hidden) show(index + 1);
+      }, INTERVAL);
+    };
+
+    show(index);
+    reel.addEventListener("click", () => {
+      show(index + 1);
+      start();
+    });
+    reel.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        show(index + 1);
+        start();
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        show(index - 1);
+        start();
+      }
+    });
+
+    start();
+  }
+
+  document.addEventListener("astro:page-load", initReel);
+  document.addEventListener("astro:before-swap", stop);
+</script>

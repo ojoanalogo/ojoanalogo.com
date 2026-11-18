@@ -1,103 +1,56 @@
 ---
-import IconInstagram from "../components/IconInstagram.astro";
+import Photo from "../components/Photo.astro";
+import { DEMO_PLACEHOLDERS, DEMO_PORTRAIT } from "../data/placeholders";
 import site from "../data/site.json";
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const portraitUrl = site.portraitUrl?.trim() || "";
+const portrait = portraitUrl
+  ? { src: portraitUrl, alt: "Alfonso Reyes — fotógrafo analógico", sample: false }
+  : DEMO_PLACEHOLDERS
+    ? { src: DEMO_PORTRAIT.image, alt: DEMO_PORTRAIT.alt ?? "", sample: true }
+    : undefined;
 ---
 
-<BaseLayout sideBarActiveItemID="about">
-  <div class="flex-1 flex items-center justify-center min-h-0">
-    <div class="max-w-6xl mx-auto w-full">
-      <!-- Hero Section -->
-      <section class="py-8">
-        <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div class="lg:w-2/5 flex-shrink-0">
-            {
-              portraitUrl ? (
-                <img
-                  class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
-                  src={portraitUrl}
-                  alt="Alfonso Reyes - Fotógrafo analógico"
-                  width={700}
-                  height={875}
-                  decoding="async"
-                />
-              ) : (
-                <div
-                  class="w-full rounded-2xl aspect-[4/5] bg-beige-200"
-                  aria-hidden="true"
-                />
-              )
-            }
-          </div>
+<BaseLayout title="Sobre mí" footer={false}>
+  <section class="about">
+    <div class="about-text">
+      <div class="about-copy" data-reveal>
+        <p class="muted">Hola 👋</p>
+        <p>
+          Soy Alfonso Reyes,<br />
+          ingeniero de software y fotógrafo.
+        </p>
+        <p>
+          Mi medio favorito para tomar fotos es la fotografía análoga, pues
+          encuentro fascinante el elemento sorpresa y la paciencia que conlleva,
+          atributos que siento han estado desapareciendo a favor de experiencias
+          efímeras y breves.
+        </p>
+        <p>{site.description}.</p>
+      </div>
 
-          <div class="lg:w-3/5 space-y-8">
-            <div class="space-y-4">
-              <div class="text-beige-800 text-sm font-medium tracking-wide">
-                Hola 👋
-              </div>
-              <h1
-                class="text-4xl lg:text-6xl font-bold font-display text-beige-900 leading-tight"
-              >
-                Soy Alfonso Reyes
-              </h1>
-              <p
-                class="text-xl lg:text-2xl text-beige-700 font-medium leading-relaxed"
-              >
-                Ingeniero de software 👨🏽‍💻 y fotógrafo.
-              </p>
-            </div>
-
-            <div class="prose prose-lg prose-beige max-w-none">
-              <p class="text-lg text-beige-800 leading-relaxed">
-                Mi medio favorito para tomar fotos es la fotografía análoga,
-                pues encuentro fascinante el elemento sorpresa y la paciencia
-                que conlleva, atributos que siento han estado desapareciendo a
-                favor de experiencias efímeras y breves.
-              </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 pt-4">
-              <a
-                class="inline-flex items-center justify-center gap-2 flex-row
-                px-8 py-3 bg-beige-800 text-beige-50 rounded-xl font-medium
-                tracking-wide uppercase transition-all duration-300 hover:bg-beige-700
-                hover:shadow-lg"
-                href="https://instagram.com/ojo.analogo/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <IconInstagram class="w-5 h-5" />
-                Instagram
-              </a>
-              <a
-                href="mailto:hola@ojoanalogo.com"
-                target="_blank"
-                class="inline-flex items-center justify-center gap-2 flex-row px-8
-                py-3 border-2 border-beige-300 text-beige-700 rounded-xl
-                font-medium tracking-wide uppercase transition-all duration-300
-                hover:border-beige-500 hover:bg-beige-100 hover:shadow-lg"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                Contáctame
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div class="about-links row">
+        <nav aria-label="Redes">
+          <a href="https://instagram.com/ojo.analogo/" target="_blank" rel="noreferrer">instagram</a>
+          <a href="https://alfon.so" target="_blank" rel="noreferrer">mi otro yo</a>
+        </nav>
+        <a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
+      </div>
     </div>
-  </div>
+
+    <figure class="about-portrait" data-reveal style="--i:1">
+      {
+        portrait && (
+          <Photo
+            src={portrait.src}
+            alt={portrait.alt}
+            sizes="(max-width: 900px) 100vw, 40vw"
+            priority
+          />
+        )
+      }
+      {portrait?.sample && <figcaption class="mono">retrato de muestra</figcaption>}
+    </figure>
+  </section>
 </BaseLayout>

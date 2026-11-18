@@ -1,7 +1,9 @@
 ---
 import { getCollection, render } from "astro:content";
-import Gallery from "../components/Gallery.astro";
+import AlbumSequence from "../components/AlbumSequence.astro";
+import { withPlaceholders } from "../data/placeholders";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAlbums, pad2, toAlbum } from "../utils/albums";
 import { gallerySlug } from "../utils/gallery";
 import { resolveGalleryPhotos } from "../utils/galleryPhotos";
 
@@ -14,48 +16,91 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const slug = gallerySlug(entry);
-const galleryContent = entry.data;
+const album = toAlbum(entry);
 const { Content } = await render(entry);
-const photos = resolveGalleryPhotos(galleryContent.photos);
-const pageTitle = galleryContent.title || slug;
+const pageTitle = album.title || album.slug;
+
+// Real CMS photos first; sparse albums get demo frames (see data/placeholders.ts).
+const { photos: framed, sample } = withPlaceholders(album.photos, album.slug);
+const photos = resolveGalleryPhotos(framed).map((p, i) => ({
+  ...p,
+  sample: Boolean(framed[i]?.sample),
+}));
+
+const albums = await getAlbums();
+const position = albums.findIndex((a) => a.slug === album.slug);
+const hasSiblings = albums.length > 1 && position !== -1;
+const prev = hasSiblings ? albums[(position - 1 + albums.length) % albums.length] : undefined;
+const next = hasSiblings ? albums[(position + 1) % albums.length] : undefined;
+
+const dateLabel = album.date
+  ? new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(album.date)
+  : undefined;
+const firstImage = album.photos[0]?.image;
 ---
 
-<BaseLayout title={pageTitle} description={galleryContent.description}>
-  <div class="container mx-auto px-4">
-    <header class="mb-6 text-left md:text-center">
-      <h1
-        class="text-3xl md:text-4xl font-bold text-beige-900 text-left md:text-center capitalize mb-2"
-      >
-        {pageTitle}
-      </h1>
+<BaseLayout
+  title={pageTitle}
+  description={album.description}
+  socialImagePath={firstImage}
+  footer={false}
+>
+  <article class="album">
+    <aside class="album-info">
+      <dl class="meta">
+        <dt>álbum</dt>
+        <dd><h1>{pageTitle}</h1></dd>
+        {
+          album.description && (
+            <>
+              <dt>tema</dt>
+              <dd>{album.description}</dd>
+            </>
+          )
+        }
+        {
+          dateLabel && (
+            <>
+              <dt>fecha</dt>
+              <dd>{dateLabel}</dd>
+            </>
+          )
+        }
+        <dt>fotos</dt>
+        <dd class="mono">{pad2(album.photos.length)}</dd>
+        <dt>medio</dt>
+        <dd>fotografía analógica</dd>
+      </dl>
+
+      <div class="album-body">
+        <Content />
+      </div>
 
       {
-        galleryContent.description && (
-          <div class="text-left md:text-center">
-            <p class="text-lg text-beige-700 leading-snug">
-              {galleryContent.description}
-            </p>
-          </div>
+        sample > 0 && (
+          <p class="album-note mono">
+            * vista previa con {pad2(sample)} {sample === 1 ? "foto" : "fotos"} de muestra
+          </p>
         )
       }
-    </header>
 
-    <div
-      class="prose prose-sm prose-beige max-w-none mb-8 text-left md:text-center
-      [&>p]:mb-2 [&>p]:leading-snug [&>h1]:mb-2 [&>h2]:mb-2 [&>h3]:mb-2"
-    >
-      <Content />
-    </div>
+      <nav class="album-nav" aria-label="Álbumes">
+        {prev && <a href={`/${prev.slug}`} rel="prev">anterior</a>}
+        {next && <a href={`/${next.slug}`} rel="next">siguiente</a>}
+        <a class="mail" href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
+      </nav>
+    </aside>
 
     {
       photos.length > 0 ? (
-        <Gallery photos={photos} />
+        <AlbumSequence photos={photos} slug={album.slug} title={pageTitle} />
       ) : (
-        <p class="text-center text-beige-700 py-16">
-          Álbum vacío — agrega fotos desde el CMS.
-        </p>
+        <div class="album-photos">
+          <div class="panel seq-framed">
+            <p class="muted">Álbum vacío — agrega fotos desde el CMS.</p>
+          </div>
+        </div>
       )
     }
-  </div>
+  </article>
 </BaseLayout>

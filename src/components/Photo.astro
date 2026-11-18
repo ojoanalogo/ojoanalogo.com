@@ -1,0 +1,69 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { isRemoteSrc, type PhotoSource } from "../types/photos";
+import { optimizeDisplayPhoto } from "../utils/optimizePhoto";
+
+type Props = Omit<HTMLAttributes<"img">, "src" | "srcset"> & {
+  src: PhotoSource;
+  alt?: string;
+  sizes?: string;
+  priority?: boolean;
+};
+
+const {
+  src,
+  alt = "",
+  sizes = "(max-width: 900px) 100vw, 60vw",
+  priority = false,
+  loading = priority ? "eager" : "lazy",
+  ...rest
+} = Astro.props;
+
+let remoteSrcset: string | undefined;
+let local: Awaited<ReturnType<typeof optimizeDisplayPhoto>> | undefined;
+
+if (isRemoteSrc(src)) {
+  // Unsplash (concept placeholders) can resize on the fly; R2 URLs pass through.
+  if (src.startsWith("https://images.unsplash.com/")) {
+    const base = src.split("?")[0];
+    remoteSrcset = [640, 1000, 1400, 1900]
+      .map((w) => `${base}?w=${w}&q=78&auto=format ${w}w`)
+      .join(", ");
+  }
+} else {
+  local = await optimizeDisplayPhoto(src, sizes);
+}
+---
+
+{
+  local ? (
+    <picture style="display: contents">
+      <source type="image/avif" srcset={local.avifSrcSet} sizes={sizes} />
+      <img
+        src={local.webpSrc}
+        srcset={local.webpSrcSet}
+        sizes={sizes}
+        width={local.width}
+        height={local.height}
+        alt={alt}
+        loading={loading}
+        decoding="async"
+        fetchpriority={priority ? "high" : undefined}
+        draggable="false"
+        {...rest}
+      />
+    </picture>
+  ) : (
+    <img
+      src={src as string}
+      srcset={remoteSrcset}
+      sizes={remoteSrcset ? sizes : undefined}
+      alt={alt}
+      loading={loading}
+      decoding="async"
+      fetchpriority={priority ? "high" : undefined}
+      draggable="false"
+      {...rest}
+    />
+  )
+}

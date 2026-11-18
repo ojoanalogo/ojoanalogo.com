@@ -1,0 +1,105 @@
+---
+import { isRemoteSrc } from "../types/photos";
+import { pad2 } from "../utils/albums";
+import { optimizeLightboxPhoto } from "../utils/optimizePhoto";
+import type { GalleryPhotoItem } from "../utils/galleryPhotos";
+import Photo from "./Photo.astro";
+
+type SeqPhoto = GalleryPhotoItem & { sample?: boolean };
+
+export interface Props {
+  photos: SeqPhoto[];
+  slug: string;
+  title: string;
+}
+
+const { photos, slug, title } = Astro.props;
+
+type Kind = "framed" | "pair" | "full";
+type Item = SeqPhoto & { n: number; href: string; fileName: string };
+type Block = { kind: Kind; items: Item[] };
+
+const items: Item[] = await Promise.all(
+  photos.map(async (photo, i) => {
+    const src = photo.default;
+    const fileName = isRemoteSrc(src)
+      ? src.split("/").pop()?.split("?")[0] ?? "photo"
+      : src.src.split("/").pop() ?? "photo";
+    return {
+      ...photo,
+      n: i + 1,
+      href: await optimizeLightboxPhoto(src),
+      fileName,
+    };
+  }),
+);
+
+// Reference rhythm: one framed print on grey, a cropped diptych, then a full bleed.
+const rhythm: Kind[] = ["framed", "pair", "full"];
+const blocks: Block[] = [];
+for (let i = 0, step = 0; i < items.length; step++) {
+  const kind = rhythm[step % rhythm.length];
+  if (kind === "pair") {
+    const two = items.slice(i, i + 2);
+    blocks.push({ kind: two.length === 2 ? "pair" : "full", items: two });
+    i += two.length;
+  } else {
+    blocks.push({ kind, items: [items[i]] });
+    i += 1;
+  }
+}
+
+const total = pad2(items.length);
+const sizesFor = (kind: Kind) =>
+  kind === "pair"
+    ? "(max-width: 900px) 50vw, 29vw"
+    : kind === "framed"
+      ? "(max-width: 900px) 80vw, 38vw"
+      : "(max-width: 900px) 100vw, 57vw";
+---
+
+<div class="album-photos">
+  {
+    blocks.map((block, b) => (
+      <div
+        class:list={[`seq-${block.kind}`, block.kind === "framed" && "panel"]}
+        data-reveal={b > 0 ? "" : undefined}
+      >
+        {block.items.map((item) => (
+          <a
+            class:list={["seq-item", item.sample && "is-sample"]}
+            href={item.href}
+            data-fslightbox={slug}
+            data-type="image"
+            data-astro-reload
+            data-umami-event="Photo click"
+            data-umami-event-photo-id={item.fileName}
+            aria-label={`Ampliar foto ${pad2(item.n)} de ${total}`}
+          >
+            {item.n === 1 ? (
+              <Photo
+                src={item.default}
+                alt={item.alt ?? `${title}, foto ${item.n}`}
+                sizes={sizesFor(block.kind)}
+                priority
+                transition:name={`cover-${slug}`}
+              />
+            ) : (
+              <Photo
+                src={item.default}
+                alt={item.alt ?? `${title}, foto ${item.n}`}
+                sizes={sizesFor(block.kind)}
+              />
+            )}
+            {item.sample && <span class="sample-tag mono">muestra</span>}
+          </a>
+        ))}
+        {block.kind === "framed" && (
+          <span class="frame-no mono" aria-hidden="true">
+            {pad2(block.items[0].n)} / {total}
+          </span>
+        )}
+      </div>
+    ))
+  }
+</div>
