@@ -1,3 +1,10 @@
 {
-  "photos": []
+  "photos": [
+    {
+      "image": "https://media.ojoanalogo.com/uploads/22.jpg"
+    },
+    {
+      "image": "https://media.ojoanalogo.com/uploads/18.jpg"
+    }
+  ]
 }
