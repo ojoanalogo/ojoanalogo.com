@@ -1,103 +1,197 @@
 ---
-import IconInstagram from "../components/IconInstagram.astro";
+import { DEMO_FILL, DEMO_PORTRAIT } from "../components/demo/placeholders";
 import site from "../data/site.json";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAlbums } from "../utils/albums";
 
-const portraitUrl = site.portraitUrl?.trim() || "";
+const cmsPortrait = site.portraitUrl?.trim() || "";
+const portraitUrl = cmsPortrait || (DEMO_FILL ? DEMO_PORTRAIT : "");
+const albums = await getAlbums();
+
+const rows = [
+  {
+    label: "Medio",
+    lines: ["Fotografía analógica"],
+  },
+  {
+    label: "Álbumes",
+    links: albums.map((a) => ({ text: a.title, href: `/${a.slug}` })),
+  },
+  {
+    label: "Contacto",
+    links: [
+      { text: "hola@ojoanalogo.com", href: "mailto:hola@ojoanalogo.com" },
+      { text: "@ojo.analogo", href: "https://www.instagram.com/ojo.analogo", external: true },
+    ],
+  },
+  {
+    label: "Mi otro yo",
+    links: [{ text: "alfon.so", href: "https://alfon.so", external: true }],
+  },
+];
 ---
 
-<BaseLayout sideBarActiveItemID="about">
-  <div class="flex-1 flex items-center justify-center min-h-0">
-    <div class="max-w-6xl mx-auto w-full">
-      <!-- Hero Section -->
-      <section class="py-8">
-        <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          <div class="lg:w-2/5 flex-shrink-0">
-            {
-              portraitUrl ? (
-                <img
-                  class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
-                  src={portraitUrl}
-                  alt="Alfonso Reyes - Fotógrafo analógico"
-                  width={700}
-                  height={875}
-                  decoding="async"
-                />
-              ) : (
-                <div
-                  class="w-full rounded-2xl aspect-[4/5] bg-beige-200"
-                  aria-hidden="true"
-                />
-              )
-            }
-          </div>
+<BaseLayout title="Info — Alfonso Reyes" active="about">
+  <section class="info">
+    <header class="page-pad info-head">
+      <h1 class="page-title">Info</h1>
+    </header>
 
-          <div class="lg:w-3/5 space-y-8">
-            <div class="space-y-4">
-              <div class="text-beige-800 text-sm font-medium tracking-wide">
-                Hola 👋
-              </div>
-              <h1
-                class="text-4xl lg:text-6xl font-bold font-display text-beige-900 leading-tight"
-              >
-                Soy Alfonso Reyes
-              </h1>
-              <p
-                class="text-xl lg:text-2xl text-beige-700 font-medium leading-relaxed"
-              >
-                Ingeniero de software 👨🏽‍💻 y fotógrafo.
-              </p>
-            </div>
+    <div class="grid-12 page-pad info-body">
+      <figure class="portrait">
+        {
+          portraitUrl ? (
+            <img
+              class="reveal"
+              src={portraitUrl}
+              alt="Alfonso Reyes — fotógrafo analógico"
+              width={900}
+              height={1200}
+              decoding="async"
+            />
+          ) : (
+            <div class="portrait-empty" aria-hidden="true" />
+          )
+        }
+      </figure>
 
-            <div class="prose prose-lg prose-beige max-w-none">
-              <p class="text-lg text-beige-800 leading-relaxed">
-                Mi medio favorito para tomar fotos es la fotografía análoga,
-                pues encuentro fascinante el elemento sorpresa y la paciencia
-                que conlleva, atributos que siento han estado desapareciendo a
-                favor de experiencias efímeras y breves.
-              </p>
-            </div>
+      <div class="info-text">
+        <p class="lede">
+          Soy Alfonso Reyes, ingeniero de software y fotógrafo. Esta es una
+          galería de instantáneas personales, producidas con ayuda de una cámara.
+        </p>
 
-            <div class="flex flex-col sm:flex-row gap-4 pt-4">
-              <a
-                class="inline-flex items-center justify-center gap-2 flex-row
-                px-8 py-3 bg-beige-800 text-beige-50 rounded-xl font-medium
-                tracking-wide uppercase transition-all duration-300 hover:bg-beige-700
-                hover:shadow-lg"
-                href="https://instagram.com/ojo.analogo/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <IconInstagram class="w-5 h-5" />
-                Instagram
-              </a>
-              <a
-                href="mailto:hola@ojoanalogo.com"
-                target="_blank"
-                class="inline-flex items-center justify-center gap-2 flex-row px-8
-                py-3 border-2 border-beige-300 text-beige-700 rounded-xl
-                font-medium tracking-wide uppercase transition-all duration-300
-                hover:border-beige-500 hover:bg-beige-100 hover:shadow-lg"
-              >
-                <svg
-                  class="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                Contáctame
-              </a>
-            </div>
-          </div>
+        <div class="reading info-reading">
+          <p>
+            Mi medio favorito para tomar fotos es la fotografía análoga, pues
+            encuentro fascinante el elemento sorpresa y la paciencia que
+            conlleva, atributos que siento han estado desapareciendo a favor de
+            experiencias efímeras y breves.
+          </p>
         </div>
-      </section>
+
+        <dl class="info-rows">
+          {
+            rows.map((row) => (
+              <div class="info-row">
+                <dt class="label">{row.label}</dt>
+                <dd>
+                  {row.lines?.map((line) => <span>{line}</span>)}
+                  {row.links?.map((link) => (
+                    <a
+                      class="link-quiet"
+                      href={link.href}
+                      target={"external" in link && link.external ? "_blank" : undefined}
+                      rel={"external" in link && link.external ? "noreferrer" : undefined}
+                    >
+                      {link.text}
+                    </a>
+                  ))}
+                </dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
     </div>
-  </div>
+  </section>
 </BaseLayout>
+
+<style>
+  .info-head {
+    padding-top: clamp(56px, 9vw, 120px);
+    padding-bottom: clamp(40px, 5vw, 72px);
+  }
+
+  .info-body {
+    row-gap: 48px;
+    align-items: start;
+  }
+
+  .portrait {
+    grid-column: 1 / span 4;
+    margin: 0;
+  }
+
+  .portrait img,
+  .portrait-empty {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: var(--color-wash);
+  }
+
+  .info-text {
+    grid-column: 6 / span 6;
+  }
+
+  .info-text .lede {
+    margin: 0;
+    max-width: 34ch;
+  }
+
+  .info-reading {
+    margin-top: clamp(28px, 3.5vw, 48px);
+    max-width: 52ch;
+  }
+
+  .info-reading p {
+    margin: 0;
+  }
+
+  .info-rows {
+    margin: clamp(40px, 5vw, 72px) 0 0;
+    display: grid;
+    row-gap: 28px;
+    font-size: 0.9375rem;
+  }
+
+  .info-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 4fr);
+    column-gap: var(--gutter);
+  }
+
+  .info-row dd {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  @media (max-width: 1023px) {
+    .portrait {
+      grid-column: 1 / span 6;
+    }
+
+    .info-text {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .portrait {
+      grid-column: 1 / -1;
+    }
+
+    .info-row {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 2px;
+    }
+  }
+</style>
+
+<script>
+  const revealPortrait = () => {
+    const img = document.querySelector<HTMLImageElement>(".portrait img");
+    if (!img) return;
+    const done = () => img.classList.add("is-loaded");
+    if (img.complete && img.naturalWidth) done();
+    else img.addEventListener("load", done, { once: true });
+  };
+
+  document.addEventListener("astro:page-load", revealPortrait);
+</script>

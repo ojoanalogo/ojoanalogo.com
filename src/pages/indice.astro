@@ -1,0 +1,202 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getAlbums } from "../utils/albums";
+
+const albums = await getAlbums();
+---
+
+<BaseLayout title="Índice — Alfonso Reyes" active="index">
+  <section class="index-page">
+    <header class="page-pad index-head">
+      <h1 class="page-title">Índice</h1>
+    </header>
+
+    <div class="index-table" role="table" aria-label="Álbumes">
+      <div class="row row-head grid-12 label" role="row">
+        <span class="c-title" role="columnheader">Álbum</span>
+        <span class="c-desc" role="columnheader">Descripción</span>
+        <span class="c-count" role="columnheader">Fotos</span>
+        <span class="c-year" role="columnheader">Año</span>
+      </div>
+
+      {
+        albums.map((album) => (
+          <a
+            href={`/${album.slug}`}
+            class="row row-item grid-12"
+            role="row"
+            data-preview={album.cover?.thumb}
+          >
+            <span class="c-title" role="cell">
+              {album.title}
+            </span>
+            <span class="c-desc label" role="cell">
+              {album.description ?? "—"}
+            </span>
+            <span class="c-count label" role="cell">
+              {String(album.photos.length).padStart(2, "0")}
+            </span>
+            <span class="c-year label" role="cell">
+              {album.year ?? "—"}
+            </span>
+          </a>
+        ))
+      }
+
+      {albums.length === 0 && <p class="row label">Aún no hay álbumes.</p>}
+    </div>
+
+    <div class="preview" data-index-preview aria-hidden="true">
+      <img alt="" decoding="async" />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .index-head {
+    padding-top: clamp(56px, 9vw, 120px);
+    padding-bottom: clamp(40px, 5vw, 72px);
+  }
+
+  /* rows inset 8px so the hover wash breathes past the text, like a contact sheet mark */
+  .index-table {
+    position: relative;
+    z-index: 2;
+    padding-inline: calc(var(--gutter) - 8px);
+  }
+
+  .row {
+    align-items: baseline;
+    padding-block: 9px;
+    padding-inline: 8px;
+    white-space: nowrap;
+  }
+
+  .row > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .row-head {
+    padding-bottom: 12px;
+  }
+
+  .row-item {
+    transition: background-color 0.2s ease;
+  }
+
+  .row-item:hover,
+  .row-item:focus-visible {
+    background: var(--color-wash);
+    outline: none;
+  }
+
+  .c-title {
+    grid-column: 1 / span 4;
+  }
+
+  .c-desc {
+    grid-column: 5 / span 3;
+  }
+
+  .c-count {
+    grid-column: 8 / span 4;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .c-year {
+    grid-column: 12;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* cursor-following preview */
+  .preview {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 5;
+    width: clamp(200px, 19vw, 300px);
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(0.96);
+    transition:
+      opacity 0.25s ease,
+      transform 0.35s var(--ease-detent);
+  }
+
+  .preview.is-visible {
+    opacity: 1;
+    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(1);
+  }
+
+  .preview img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    background: var(--color-wash);
+  }
+
+  @media (hover: none), (max-width: 767px) {
+    .preview {
+      display: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .c-title {
+      grid-column: 1 / span 7;
+    }
+
+    .c-desc,
+    .c-count {
+      display: none;
+    }
+
+    .c-year {
+      grid-column: 8 / -1;
+    }
+  }
+</style>
+
+<script>
+  const setupIndexPreview = () => {
+    const preview = document.querySelector<HTMLElement>("[data-index-preview]");
+    const img = preview?.querySelector("img");
+    if (!preview || !img) return;
+
+    let raf = 0;
+    let x = 0;
+    let y = 0;
+
+    const place = () => {
+      raf = 0;
+      const w = preview.offsetWidth;
+      const h = preview.offsetHeight || w * 1.25;
+      // Sit to the right of the cursor, kept inside the viewport.
+      const px = Math.min(x + 28, window.innerWidth - w - 16);
+      const py = Math.max(16, Math.min(y - h / 2, window.innerHeight - h - 16));
+      preview.style.setProperty("--px", `${px}px`);
+      preview.style.setProperty("--py", `${py}px`);
+    };
+
+    document.querySelectorAll<HTMLElement>("[data-preview]").forEach((row) => {
+      row.addEventListener("pointerenter", () => {
+        const src = row.dataset.preview;
+        if (!src) return;
+        if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+        preview.classList.add("is-visible");
+      });
+      row.addEventListener("pointerleave", () => preview.classList.remove("is-visible"));
+      row.addEventListener("pointermove", (e) => {
+        x = e.clientX;
+        y = e.clientY;
+        if (!raf) raf = requestAnimationFrame(place);
+      });
+    });
+  };
+
+  document.addEventListener("astro:page-load", setupIndexPreview);
+</script>

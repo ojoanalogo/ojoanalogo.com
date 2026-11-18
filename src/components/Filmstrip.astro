@@ -1,0 +1,638 @@
+---
+/**
+ * Landing "dial": one large frame, captioned, above a scrubbable filmstrip.
+ * The strip turns like a lens ring — wheel, drag, arrows or click step it
+ * one detent at a time; the yellow mark is the index line.
+ */
+import type { Frame } from "../utils/albums";
+
+export interface Props {
+  frames: Frame[];
+}
+
+const { frames } = Astro.props;
+const n = frames.length;
+
+// Repeat the set so the strip always overflows both edges; odd count keeps a
+// middle copy we can recentre into without a visible jump.
+const MIN_THUMBS = 72;
+let copies = Math.max(3, Math.ceil(MIN_THUMBS / Math.max(n, 1)));
+if (copies % 2 === 0) copies += 1;
+const middle = Math.floor(copies / 2);
+
+const thumbs = Array.from({ length: copies }, (_, copy) =>
+  frames.map((frame, index) => ({ frame, index, copy, v: copy * n + index })),
+).flat();
+
+const pad = (i: number) => String(i + 1).padStart(2, "0");
+---
+
+<section
+  class="dial"
+  data-dial
+  data-count={n}
+  data-copies={copies}
+  data-middle={middle}
+  aria-roledescription="carrusel"
+  aria-label="Fotografías destacadas"
+>
+  <h1 class="sr-only">Alfonso Reyes — ojoanalogo, fotografía analógica</h1>
+
+  <div class="stage" data-stage>
+    {
+      frames.map((frame, i) => (
+        <figure
+          class="frame"
+          data-frame={i}
+          data-active={i === 0 ? "true" : undefined}
+          aria-hidden={i === 0 ? undefined : "true"}
+        >
+          <div class="frame-inner">
+            {frame.href ? (
+              <a href={frame.href} class="frame-link" tabindex={i === 0 ? undefined : -1}>
+                <span class="sr-only">Abrir {frame.title}</span>
+                <img
+                  class="frame-img"
+                  {...(i === 0 ? { src: frame.src, fetchpriority: "high" } : { "data-src": frame.src })}
+                  alt={frame.alt}
+                  decoding="async"
+                  draggable="false"
+                />
+              </a>
+            ) : (
+              <img
+                class="frame-img"
+                {...(i === 0 ? { src: frame.src, fetchpriority: "high" } : { "data-src": frame.src })}
+                alt={frame.alt}
+                decoding="async"
+                draggable="false"
+              />
+            )}
+            <figcaption class="frame-caption">
+              <span class="caption-title">{frame.title}</span>
+              <span class="caption-meta">{frame.meta}</span>
+            </figcaption>
+          </div>
+        </figure>
+      ))
+    }
+  </div>
+
+  <p class="sr-only" aria-live="polite" data-live>
+    {frames[0]?.title}, fotograma 1 de {n}
+  </p>
+
+  <div class="strip-wrap">
+    <div class="ruler" aria-hidden="true">
+      <span class="ruler-ticks" data-ruler></span>
+      <span class="ruler-mark"></span>
+    </div>
+
+    <div
+      class="strip"
+      data-strip
+      role="listbox"
+      aria-label="Fotogramas"
+      aria-orientation="horizontal"
+      tabindex="0"
+    >
+      <div class="strip-track" data-track>
+        {
+          thumbs.map(({ frame, index, copy, v }) => {
+            const real = copy === middle;
+            return (
+              <div
+                class="thumb"
+                role={real ? "option" : undefined}
+                id={real ? `frame-opt-${index}` : undefined}
+                aria-selected={real ? (index === 0 ? "true" : "false") : undefined}
+                aria-label={real ? `${pad(index)} — ${frame.title}` : undefined}
+                aria-hidden={real ? undefined : "true"}
+                data-v={v}
+                data-index={index}
+              >
+                <img
+                  src={frame.thumb}
+                  alt=""
+                  loading={Math.abs(copy - middle) <= 1 ? "eager" : "lazy"}
+                  decoding="async"
+                  draggable="false"
+                />
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .dial {
+    /* thumb geometry — read by the script, keep in px */
+    --tw: 36px;
+    --th: 56px;
+    --tg: 2px;
+    --taw: 44px;
+    --tam: 7px;
+
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ——— stage ——— */
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    container-type: size;
+    margin-top: clamp(8px, 3.2vh, 30px);
+    margin-bottom: clamp(10px, 2.4vh, 22px);
+  }
+
+  .frame {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.32s ease,
+      visibility 0s linear 0.32s;
+  }
+
+  .frame[data-active="true"] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity 0.32s ease,
+      visibility 0s;
+    z-index: 1;
+  }
+
+  .frame-inner {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    opacity: 0;
+    transition: opacity 0.6s var(--ease-detent);
+  }
+
+  .frame-inner.is-loaded {
+    opacity: 1;
+  }
+
+  .frame-link {
+    display: block;
+    cursor: pointer;
+  }
+
+  .frame-img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-height: calc(100cqh - 36px);
+    max-width: min(calc(100cqw - 2 * var(--gutter)), 1180px);
+    background: var(--color-wash);
+    transform: scale(1.012);
+    transition: transform 1.1s var(--ease-detent);
+  }
+
+  .frame[data-active="true"] .frame-img {
+    transform: none;
+  }
+
+  .frame-caption {
+    width: 0;
+    min-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding-top: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .caption-title {
+    flex: none;
+  }
+
+  .caption-meta {
+    color: var(--color-mute);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  /* ——— ruler + strip ——— */
+  .strip-wrap {
+    flex: none;
+    padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .ruler {
+    position: relative;
+    height: 15px;
+    margin-bottom: 6px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  }
+
+  .ruler-ticks {
+    position: absolute;
+    inset: 0;
+    --step: calc(var(--tw) + var(--tg));
+    background-image:
+      linear-gradient(90deg, #a6a6a6 0 1px, transparent 1px),
+      linear-gradient(90deg, #d0d0d0 0 1px, transparent 1px);
+    background-size:
+      var(--step) 10px,
+      calc(var(--step) / 4) 5px;
+    background-repeat: repeat-x;
+    background-position:
+      var(--ruler-x, 0px) 100%,
+      var(--ruler-x, 0px) 100%;
+    transition: background-position 0.55s var(--ease-detent);
+  }
+
+  .ruler-mark {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 2px;
+    height: 15px;
+    margin-left: -1px;
+    background: var(--color-kodak);
+  }
+
+  .strip {
+    position: relative;
+    overflow: hidden;
+    touch-action: pan-y;
+    cursor: grab;
+    outline-offset: 4px;
+  }
+
+  .strip.is-dragging {
+    cursor: grabbing;
+  }
+
+  .strip-track {
+    display: flex;
+    gap: var(--tg);
+    width: max-content;
+    transform: translate3d(var(--track-x, 0px), 0, 0);
+    transition: transform 0.55s var(--ease-detent);
+    will-change: transform;
+  }
+
+  .thumb {
+    flex: 0 0 var(--tw);
+    height: var(--th);
+    overflow: hidden;
+    background: var(--color-wash);
+    transition:
+      flex-basis 0.55s var(--ease-detent),
+      margin 0.55s var(--ease-detent);
+  }
+
+  .thumb[data-active="true"] {
+    flex-basis: var(--taw);
+    margin-inline: var(--tam);
+  }
+
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+
+  .is-instant .strip-track,
+  .is-instant .thumb,
+  .is-instant .ruler-ticks,
+  .is-scrubbing .strip-track,
+  .is-scrubbing .ruler-ticks {
+    transition: none !important;
+  }
+
+  @media (max-width: 767px) {
+    .dial {
+      --tw: 30px;
+      --th: 48px;
+      --taw: 38px;
+      --tam: 6px;
+    }
+
+    .stage {
+      margin-top: 4vh;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame,
+    .frame[data-active="true"],
+    .frame-img,
+    .strip-track,
+    .thumb,
+    .ruler-ticks {
+      transition: none !important;
+    }
+  }
+</style>
+
+<script>
+  import { click } from "../scripts/shutter";
+
+  let teardown: (() => void) | null = null;
+
+  const px = (el: Element, name: string) =>
+    parseFloat(getComputedStyle(el).getPropertyValue(name)) || 0;
+
+  function initDial() {
+    teardown?.();
+    teardown = null;
+
+    const root = document.querySelector<HTMLElement>("[data-dial]");
+    if (!root) return;
+
+    const n = Number(root.dataset.count) || 0;
+    const copies = Number(root.dataset.copies) || 3;
+    const middle = Number(root.dataset.middle) || 1;
+    if (n === 0) return;
+
+    const strip = root.querySelector<HTMLElement>("[data-strip]")!;
+    const track = root.querySelector<HTMLElement>("[data-track]")!;
+    const ruler = root.querySelector<HTMLElement>("[data-ruler]")!;
+    const stage = root.querySelector<HTMLElement>("[data-stage]")!;
+    const live = root.querySelector<HTMLElement>("[data-live]");
+    const frames = Array.from(root.querySelectorAll<HTMLElement>("[data-frame]"));
+    const thumbs = Array.from(track.querySelectorAll<HTMLElement>(".thumb"));
+
+    const ac = new AbortController();
+    const { signal } = ac;
+    teardown = () => ac.abort();
+    document.addEventListener("astro:before-swap", () => teardown?.(), { once: true, signal });
+
+    let v = middle * n; // virtual position across all copies
+    let rulerShift = 0; // keeps the ruler continuous across recentring
+    let activeThumb: HTMLElement | null = null;
+    let activeIndex = -1;
+    let settleTimer = 0;
+
+    const mod = (a: number) => ((a % n) + n) % n;
+
+    const geometry = () => ({
+      tw: px(root, "--tw"),
+      tg: px(root, "--tg"),
+      taw: px(root, "--taw"),
+      tam: px(root, "--tam"),
+      width: strip.clientWidth,
+    });
+
+    const offsetFor = (pos: number) => {
+      const g = geometry();
+      return g.width / 2 - (pos * (g.tw + g.tg) + g.tam + g.taw / 2);
+    };
+
+    const setTrack = (x: number) => {
+      track.style.setProperty("--track-x", `${x}px`);
+      // Ruler: one major tick per frame, aligned so a tick sits under the
+      // index mark when the dial settles; it turns with the strip.
+      ruler.style.setProperty(
+        "--ruler-x",
+        `${x + rulerShift + px(root, "--tam") + px(root, "--taw") / 2 - 0.5}px`,
+      );
+    };
+
+    const hydrate = (index: number) => {
+      const img = frames[mod(index)]?.querySelector<HTMLImageElement>("img[data-src]");
+      if (img?.dataset.src) {
+        img.src = img.dataset.src;
+        img.removeAttribute("data-src");
+      }
+    };
+
+    const showFrame = (index: number, sound: boolean) => {
+      if (index === activeIndex) return;
+      activeIndex = index;
+
+      frames.forEach((frame, i) => {
+        const on = i === index;
+        if (on) {
+          frame.dataset.active = "true";
+          frame.removeAttribute("aria-hidden");
+        } else {
+          frame.removeAttribute("data-active");
+          frame.setAttribute("aria-hidden", "true");
+        }
+        frame.querySelector("a")?.setAttribute("tabindex", on ? "0" : "-1");
+      });
+
+      for (let d = -2; d <= 2; d++) hydrate(index + d);
+
+      thumbs.forEach((t) => {
+        if (t.getAttribute("role") === "option") {
+          t.setAttribute("aria-selected", String(Number(t.dataset.index) === index));
+        }
+      });
+      strip.setAttribute("aria-activedescendant", `frame-opt-${index}`);
+
+      if (live) {
+        const title = frames[index]?.querySelector(".caption-title")?.textContent ?? "";
+        live.textContent = `${title}, fotograma ${index + 1} de ${n}`;
+      }
+
+      if (sound) click();
+    };
+
+    const markThumb = (pos: number) => {
+      const next = thumbs[pos] ?? null;
+      if (next === activeThumb) return;
+      activeThumb?.removeAttribute("data-active");
+      next?.setAttribute("data-active", "true");
+      activeThumb = next;
+    };
+
+    /** Jump to the identical frame in the middle copy without animating. */
+    const recentre = () => {
+      const target = middle * n + mod(v);
+      if (target === v) return;
+      root.classList.add("is-instant");
+      const g = geometry();
+      rulerShift += (target - v) * (g.tw + g.tg);
+      v = target;
+      markThumb(v);
+      setTrack(offsetFor(v));
+      void track.offsetWidth; // flush styles before re-enabling transitions
+      root.classList.remove("is-instant");
+    };
+
+    const goTo = (pos: number, { sound = true, instant = false } = {}) => {
+      v = Math.max(0, Math.min(copies * n - 1, pos));
+      if (instant) root.classList.add("is-instant");
+      markThumb(v);
+      setTrack(offsetFor(v));
+      showFrame(mod(v), sound);
+      if (instant) {
+        void track.offsetWidth;
+        root.classList.remove("is-instant");
+      }
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(recentre, 600);
+    };
+
+    const step = (d: number) => goTo(v + d);
+
+    // Initial position.
+    goTo(v, { sound: false, instant: true });
+
+    // Reveal images as they decode.
+    root.querySelectorAll<HTMLImageElement>(".frame-img").forEach((img) => {
+      const done = () => img.closest(".frame-inner")?.classList.add("is-loaded");
+      if (img.complete && img.naturalWidth) done();
+      else img.addEventListener("load", done, { once: true, signal });
+    });
+
+    // ——— wheel: accumulate, one detent per notch ———
+    let wheelAcc = 0;
+    let wheelLock = 0;
+    root.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        wheelAcc += e.deltaMode === 1 ? delta * 16 : delta;
+        const now = performance.now();
+        if (Math.abs(wheelAcc) >= 34 && now - wheelLock > 70) {
+          step(wheelAcc > 0 ? 1 : -1);
+          wheelAcc = 0;
+          wheelLock = now;
+        }
+      },
+      { passive: false, signal },
+    );
+
+    // ——— keyboard ———
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+        const target = e.target as HTMLElement | null;
+        if (target?.closest("input, textarea, select, [contenteditable]")) return;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+          e.preventDefault();
+          step(1);
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+          e.preventDefault();
+          step(-1);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          goTo(middle * n);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          goTo(middle * n + n - 1);
+        }
+      },
+      { signal },
+    );
+
+    // ——— drag / click on the strip (live scrubbing) ———
+    let dragging = false;
+    let startX = 0;
+    let startOffset = 0;
+    let moved = 0;
+
+    const nearestFor = (x: number) => {
+      const g = geometry();
+      return Math.round((g.width / 2 - x - g.tam - g.taw / 2) / (g.tw + g.tg));
+    };
+
+    strip.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (e.button !== 0) return;
+        dragging = true;
+        moved = 0;
+        startX = e.clientX;
+        startOffset = offsetFor(v);
+        strip.setPointerCapture(e.pointerId);
+        window.clearTimeout(settleTimer);
+      },
+      { signal },
+    );
+
+    strip.addEventListener(
+      "pointermove",
+      (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        moved = Math.max(moved, Math.abs(dx));
+        if (moved < 4) return;
+        strip.classList.add("is-dragging");
+        root.classList.add("is-scrubbing");
+        const x = startOffset + dx;
+        setTrack(x);
+        const pos = Math.max(0, Math.min(copies * n - 1, nearestFor(x)));
+        if (pos !== v) {
+          v = pos;
+          markThumb(v);
+          showFrame(mod(v), true);
+        }
+      },
+      { signal },
+    );
+
+    const endDrag = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      strip.classList.remove("is-dragging");
+      root.classList.remove("is-scrubbing");
+      if (moved < 4) {
+        const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>(".thumb");
+        if (el?.dataset.v) {
+          goTo(Number(el.dataset.v));
+          return;
+        }
+      }
+      goTo(v, { sound: false });
+    };
+    strip.addEventListener("pointerup", endDrag, { signal });
+    strip.addEventListener("pointercancel", endDrag, { signal });
+
+    // ——— swipe on the stage (touch) ———
+    let swipeX: number | null = null;
+    stage.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (e.pointerType !== "mouse") swipeX = e.clientX;
+      },
+      { signal },
+    );
+    stage.addEventListener(
+      "pointerup",
+      (e) => {
+        if (swipeX === null) return;
+        const dx = e.clientX - swipeX;
+        swipeX = null;
+        if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+      },
+      { signal },
+    );
+
+    // Keep the active thumb centred on resize.
+    window.addEventListener("resize", () => goTo(v, { sound: false, instant: true }), {
+      signal,
+    });
+  }
+
+  document.addEventListener("astro:page-load", initDial);
+</script>

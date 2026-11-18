@@ -1,0 +1,71 @@
+---
+/**
+ * ojoanalogo mark — a six-blade iris diaphragm drawn with hairlines.
+ * Each blade edge starts at a vertex of the inner hexagon and runs along
+ * that side until it meets the lens barrel.
+ */
+export interface Props {
+  class?: string;
+  size?: number;
+}
+
+const { class: className = "", size = 18 } = Astro.props;
+
+const R = 8; // barrel radius
+const r = 3.1; // aperture (inner hexagon) radius
+const blades = 6;
+
+const vertex = (k: number) => {
+  const a = ((k * 360) / blades - 90) * (Math.PI / 180);
+  return [r * Math.cos(a), r * Math.sin(a)] as const;
+};
+
+const lines = Array.from({ length: blades }, (_, k) => {
+  const [x0, y0] = vertex(k);
+  const [x1, y1] = vertex(k + 1);
+  const len = Math.hypot(x1 - x0, y1 - y0);
+  const dx = (x1 - x0) / len;
+  const dy = (y1 - y0) / len;
+  // Solve |p + t·d| = R for t > 0.
+  const b = x0 * dx + y0 * dy;
+  const c = x0 * x0 + y0 * y0 - R * R;
+  const t = -b + Math.sqrt(b * b - c);
+  const f = (n: number) => n.toFixed(3);
+  return { x1: f(x0), y1: f(y0), x2: f(x0 + t * dx), y2: f(y0 + t * dy) };
+});
+---
+
+<svg
+  class:list={["mark", className]}
+  width={size}
+  height={size}
+  viewBox="-9 -9 18 18"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.1"
+  stroke-linecap="round"
+  aria-hidden="true"
+>
+  <circle r={R} />
+  <g class="mark-blades">
+    {lines.map((l) => <line {...l} />)}
+  </g>
+</svg>
+
+<style>
+  .mark-blades {
+    transform-origin: 0 0;
+    transition: transform 0.9s var(--ease-detent);
+  }
+
+  :global(a:hover) > .mark .mark-blades,
+  :global(a:focus-visible) > .mark .mark-blades {
+    transform: rotate(60deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mark-blades {
+      transition: none;
+    }
+  }
+</style>

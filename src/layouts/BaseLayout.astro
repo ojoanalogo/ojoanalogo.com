@@ -3,21 +3,28 @@ import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import site from "../data/site.json";
+import type { NavId } from "../types/nav";
+
+export interface Props {
+  title?: string;
+  description?: string;
+  socialImagePath?: string;
+  active?: NavId;
+  /** Full-viewport stage with no footer (landing). */
+  fullscreen?: boolean;
+}
 
 const {
   socialImagePath,
   title = site.title,
   description = site.description,
-  navbarActiveItemID,
-  compactFooter = false,
+  active,
+  fullscreen = false,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html
-  lang="es"
-  class="bg-beige-50 text-neutral-800 selection:bg-beige-200 selection:text-neutral-900 h-full"
->
+<html lang="es">
   <head>
     <BaseHead
       title={title}
@@ -25,16 +32,47 @@ const {
       socialImagePath={socialImagePath}
     />
   </head>
-  <body
-    class:list={[
-      "w-full font-body font-light tracking-wide min-h-screen flex flex-col",
-      compactFooter && "h-dvh max-h-dvh overflow-hidden",
-    ]}
-  >
-    <Header title={site.title} navbarActiveItemID={navbarActiveItemID} />
-    <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col min-h-0">
+  <body class:list={["site", fullscreen && "is-fullscreen"]}>
+    <a class="skip-link" href="#main">Saltar al contenido</a>
+    <Header title={site.title} active={active} showSound={fullscreen} />
+    <main id="main" class="site-main">
       <slot />
     </main>
-    <Footer compact={compactFooter} />
+    {!fullscreen && <Footer />}
   </body>
 </html>
+
+<style>
+  .site {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-paper);
+  }
+
+  .site-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .site.is-fullscreen {
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .skip-link {
+    position: absolute;
+    left: var(--gutter);
+    top: -40px;
+    z-index: 50;
+    background: var(--color-kodak);
+    padding: 2px 6px;
+  }
+
+  .skip-link:focus {
+    top: 8px;
+  }
+</style>

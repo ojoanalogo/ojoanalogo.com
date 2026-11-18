@@ -7,6 +7,8 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   site: 'https://ojoanalogo.com',
   compressHTML: true,
+  // The dev toolbar sits right on top of the landing filmstrip.
+  devToolbar: { enabled: false },
   integrations: [mdx(), sitemap()],
   vite: {
     plugins: [tailwindcss()],

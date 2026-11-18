@@ -1,39 +1,174 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/typography';
+
+/*
+ * Detent — cinematic index.
+ * White paper, near-black ink, one mid grey, and a single Kodak-yellow
+ * accent used for "you are here" (active nav, the dial's detent mark).
+ */
 
 @theme {
-  --font-serif: 'Fraunces', Georgia, serif;
-  --font-sans: 'Fraunces', system-ui, sans-serif;
-  --font-display: 'Oranienbaum', Georgia, serif;
-  --font-body: 'Fraunces', Georgia, serif;
+  --font-sans: 'Instrument Sans', 'Helvetica Neue', Helvetica, sans-serif;
+  --font-display: 'Instrument Sans', 'Helvetica Neue', Helvetica, sans-serif;
+  --font-body: 'Instrument Sans', 'Helvetica Neue', Helvetica, sans-serif;
 
-  --color-beige-50: #faf7f2;
-  --color-beige-100: #f5f1eb;
-  --color-beige-200: #ebe3d4;
-  --color-beige-300: #ddd0bd;
-  --color-beige-400: #c9b896;
-  --color-beige-500: #b8a082;
-  --color-beige-600: #a08a70;
-  --color-beige-700: #86725c;
-  --color-beige-800: #6d5f4e;
-  --color-beige-900: #594f42;
+  --color-paper: #ffffff;
+  --color-ink: #121212;
+  --color-mute: #8c8c8c;
+  --color-line: #d9d9d9;
+  --color-wash: #f2f2f2;
+  --color-kodak: #f2b705;
+
+  --ease-detent: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@utility prose-beige {
-  --tw-prose-body: #594f42;
-  --tw-prose-headings: #594f42;
-  --tw-prose-lead: #6d5f4e;
-  --tw-prose-links: #86725c;
-  --tw-prose-bold: #594f42;
-  --tw-prose-counters: #a08a70;
-  --tw-prose-bullets: #c9b896;
-  --tw-prose-hr: #ebe3d4;
-  --tw-prose-quotes: #594f42;
-  --tw-prose-quote-borders: #ebe3d4;
-  --tw-prose-captions: #a08a70;
-  --tw-prose-code: #594f42;
-  --tw-prose-pre-code: #f5f1eb;
-  --tw-prose-pre-bg: #594f42;
-  --tw-prose-th-borders: #ddd0bd;
-  --tw-prose-td-borders: #ebe3d4;
+:root {
+  --gutter: 24px;
+  --header-h: 56px;
+  color-scheme: light;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 16px;
+    --header-h: 52px;
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.45;
+    font-weight: 400;
+    letter-spacing: -0.003em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  ::selection {
+    background: var(--color-kodak);
+    color: var(--color-ink);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    -webkit-user-drag: none;
+  }
+
+  :focus-visible {
+    outline: 1.5px solid var(--color-ink);
+    outline-offset: 3px;
+  }
+}
+
+@layer components {
+  /* 12-column page grid shared by header, tables and footer. */
+  .grid-12 {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+  }
+
+  .page-pad {
+    padding-inline: var(--gutter);
+  }
+
+  /* Big, tight, quiet page titles: "Índice", "Info", album names. */
+  .page-title {
+    font-weight: 500;
+    font-size: clamp(2.75rem, 1.6rem + 3.6vw, 4.5rem);
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+    margin: 0;
+  }
+
+  .label {
+    color: var(--color-mute);
+  }
+
+  /* The yellow "you are here" chip. */
+  .detent-chip {
+    position: relative;
+    display: inline-block;
+    padding: 0 3px;
+    margin: 0 -3px;
+    background-image: linear-gradient(var(--color-kodak), var(--color-kodak));
+    background-repeat: no-repeat;
+    background-position: 0 50%;
+    background-size: 0% 100%;
+    transition: background-size 0.45s var(--ease-detent);
+  }
+
+  .detent-chip[aria-current='page'],
+  .detent-chip:hover {
+    background-size: 100% 100%;
+  }
+
+  .link-quiet {
+    transition: color 0.2s ease;
+  }
+
+  .link-quiet:hover {
+    color: var(--color-mute);
+  }
+
+  /* Lede + reading copy on album and info pages. */
+  .lede {
+    font-size: clamp(1.25rem, 1rem + 0.8vw, 1.75rem);
+    line-height: 1.25;
+    letter-spacing: -0.018em;
+    text-wrap: pretty;
+  }
+
+  .reading {
+    font-size: 1.0625rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  .reading p + p {
+    margin-top: 0.9em;
+  }
+
+  .reading a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  /* Subtle reveal for images once they decode. */
+  .reveal {
+    opacity: 0;
+    transition: opacity 0.7s var(--ease-detent);
+  }
+
+  .reveal.is-loaded {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal {
+      transition: none;
+    }
+  }
+}
+
+/* Page transitions (ClientRouter): a quick, quiet cross-fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.28s;
+  animation-timing-function: ease;
 }

@@ -1,28 +1,127 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+// A blank stretch of film: empty frames under the ruler, nothing at the mark.
+const blanks = Array.from({ length: 49 });
 ---
 
-<BaseLayout title="404: Not Found">
-  <div class="container mx-auto flex flex-col items-center justify-center text-center px-4">
-    <div class="relative mb-8">
-      <div class="absolute -inset-2 blur-lg bg-neutral-200 opacity-75 rounded-full"></div>
-      <span class="relative text-9xl">🎞️</span>
+<BaseLayout title="404 — Rollo no encontrado">
+  <section class="lost">
+    <header class="page-pad lost-head grid-12">
+      <h1 class="page-title lost-title">404</h1>
+      <div class="lost-text">
+        <p class="lede">Rollo no encontrado.</p>
+        <p class="label">
+          La fotografía que buscas parece haberse perdido en el cuarto oscuro.
+        </p>
+        <a href="/" class="detent-chip back">Volver al inicio</a>
+      </div>
+    </header>
+
+    <div class="blank-strip" aria-hidden="true">
+      <div class="blank-ruler"><span></span></div>
+      <div class="blank-frames">
+        {blanks.map((_, i) => <span class:list={["blank", i === 24 && "is-here"]} />)}
+      </div>
     </div>
-    <h1 class="font-display text-6xl md:text-8xl font-bold mb-6 tracking-tight">
-      <span class="block">Rollo no</span>
-      <span class="block text-neutral-400">encontrado</span>
-    </h1>
-    <p class="text-xl md:text-2xl text-neutral-600 mb-12 max-w-md">
-      La fotografía que buscas parece haberse perdido en el cuarto oscuro.
-    </p>
-    <a 
-      href="/" 
-      class="group px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-md font-medium transition-all duration-300 flex items-center"
-    >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Volver a la galería
-    </a>
-  </div>
+  </section>
 </BaseLayout>
+
+<style>
+  .lost {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .lost-head {
+    padding-top: clamp(56px, 9vw, 120px);
+    row-gap: 32px;
+    align-items: end;
+  }
+
+  .lost-title {
+    grid-column: 1 / span 5;
+    font-size: clamp(6rem, 3rem + 14vw, 16rem);
+    letter-spacing: -0.06em;
+    line-height: 0.8;
+  }
+
+  .lost-text {
+    grid-column: 6 / span 5;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .lost-text p {
+    margin: 0;
+    max-width: 42ch;
+  }
+
+  .back {
+    margin-top: 12px;
+  }
+
+  .blank-strip {
+    padding-top: clamp(64px, 10vw, 140px);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  }
+
+  .blank-ruler {
+    position: relative;
+    height: 15px;
+    margin-bottom: 6px;
+    background-image:
+      linear-gradient(90deg, #b5b5b5 0 1px, transparent 1px),
+      linear-gradient(90deg, #d4d4d4 0 1px, transparent 1px);
+    background-size:
+      76px 11px,
+      19px 6px;
+    background-repeat: repeat-x;
+    background-position:
+      calc(50% + 1px) 100%,
+      calc(50% + 1px) 100%;
+  }
+
+  .blank-ruler span {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 2px;
+    height: 15px;
+    margin-left: -1px;
+    background: var(--color-kodak);
+  }
+
+  .blank-frames {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .blank {
+    flex: 0 0 36px;
+    height: 56px;
+    background: var(--color-wash);
+  }
+
+  .blank.is-here {
+    flex-basis: 44px;
+    margin-inline: 7px;
+    background: transparent;
+    outline: 1px dashed var(--color-line);
+    outline-offset: -1px;
+  }
+
+  @media (max-width: 767px) {
+    .lost-title,
+    .lost-text {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

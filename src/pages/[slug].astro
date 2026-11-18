@@ -1,61 +1,164 @@
 ---
-import { getCollection, render } from "astro:content";
-import Gallery from "../components/Gallery.astro";
+import { render } from "astro:content";
+import PhotoGrid from "../components/PhotoGrid.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { gallerySlug } from "../utils/gallery";
-import { resolveGalleryPhotos } from "../utils/galleryPhotos";
+import { formatAlbumDate, getAlbums, type Album } from "../utils/albums";
 
 export async function getStaticPaths() {
-  const galleryEntries = await getCollection("gallery");
-  return galleryEntries.map((entry) => ({
-    params: { slug: gallerySlug(entry) },
-    props: { entry },
+  const albums = await getAlbums();
+  return albums.map((album, i) => ({
+    params: { slug: album.slug },
+    props: {
+      album,
+      position: i,
+      total: albums.length,
+      next: albums.length > 1 ? albums[(i + 1) % albums.length] : undefined,
+    },
   }));
 }
 
-const { entry } = Astro.props;
-const slug = gallerySlug(entry);
-const galleryContent = entry.data;
-const { Content } = await render(entry);
-const photos = resolveGalleryPhotos(galleryContent.photos);
-const pageTitle = galleryContent.title || slug;
+interface Props {
+  album: Album;
+  position: number;
+  total: number;
+  next?: Album;
+}
+
+const { album, position, total, next } = Astro.props;
+const { Content } = await render(album.entry);
+const pad = (n: number) => String(n).padStart(2, "0");
+const shown = album.photos.length;
+
+const meta = [
+  { label: "Fecha", value: formatAlbumDate(album.date) ?? "Sin fecha" },
+  { label: "Fotos", value: shown === 1 ? "1 fotograma" : `${shown} fotogramas` },
+  { label: "Medio", value: "Fotografía analógica" },
+  { label: "Álbum", value: `${pad(position + 1)} / ${pad(total)}` },
+];
 ---
 
-<BaseLayout title={pageTitle} description={galleryContent.description}>
-  <div class="container mx-auto px-4">
-    <header class="mb-6 text-left md:text-center">
-      <h1
-        class="text-3xl md:text-4xl font-bold text-beige-900 text-left md:text-center capitalize mb-2"
-      >
-        {pageTitle}
-      </h1>
-
-      {
-        galleryContent.description && (
-          <div class="text-left md:text-center">
-            <p class="text-lg text-beige-700 leading-snug">
-              {galleryContent.description}
-            </p>
-          </div>
-        )
-      }
+<BaseLayout title={`${album.title} — Alfonso Reyes`} description={album.description}>
+  <article class="album">
+    <header class="album-head page-pad">
+      <h1 class="page-title">{album.title}</h1>
     </header>
 
-    <div
-      class="prose prose-sm prose-beige max-w-none mb-8 text-left md:text-center
-      [&>p]:mb-2 [&>p]:leading-snug [&>h1]:mb-2 [&>h2]:mb-2 [&>h3]:mb-2"
-    >
-      <Content />
-    </div>
+    <section class="album-intro grid-12 page-pad">
+      <dl class="album-meta">
+        {
+          meta.map((item) => (
+            <div>
+              <dt class="label">{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <div class="album-text reading">
+        {album.description && <p class="album-lede">{album.description}</p>}
+        <Content />
+      </div>
+    </section>
 
     {
-      photos.length > 0 ? (
-        <Gallery photos={photos} />
+      album.photos.length > 0 ? (
+        <PhotoGrid photos={album.photos} group={album.slug} />
       ) : (
-        <p class="text-center text-beige-700 py-16">
-          Álbum vacío — agrega fotos desde el CMS.
-        </p>
+        <p class="album-empty page-pad label">Álbum vacío — agrega fotos desde el CMS.</p>
       )
     }
-  </div>
+
+    {
+      next && (
+        <nav class="album-next page-pad" aria-label="Siguiente álbum">
+          <p class="label">Siguiente álbum</p>
+          <a href={`/${next.slug}`} class="page-title next-link">
+            {next.title}
+          </a>
+        </nav>
+      )
+    }
+  </article>
 </BaseLayout>
+
+<style>
+  .album-head {
+    padding-top: clamp(56px, 9vw, 120px);
+  }
+
+  .album-intro {
+    padding-top: clamp(32px, 4vw, 56px);
+    padding-bottom: clamp(56px, 7vw, 96px);
+    row-gap: 40px;
+  }
+
+  .album-meta {
+    grid-column: 1 / span 4;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--gutter);
+    row-gap: 18px;
+    align-content: start;
+    margin: 0;
+    font-size: 0.9375rem;
+  }
+
+  .album-meta dd {
+    margin: 0;
+  }
+
+  .album-meta dt {
+    line-height: 1.3;
+  }
+
+  .album-text {
+    grid-column: 6 / span 5;
+  }
+
+  .album-text :global(p) {
+    margin: 0;
+  }
+
+  .album-text :global(p + p) {
+    margin-top: 0.9em;
+  }
+
+  .album-lede {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    letter-spacing: -0.012em;
+    margin-bottom: 0.9em !important;
+  }
+
+  .album-empty {
+    padding-block: 64px;
+  }
+
+  .album-next {
+    padding-top: clamp(80px, 10vw, 140px);
+  }
+
+  .album-next p {
+    margin: 0 0 6px;
+  }
+
+  .next-link {
+    display: inline-block;
+    transition: color 0.25s ease;
+  }
+
+  .next-link:hover {
+    color: var(--color-mute);
+  }
+
+  @media (max-width: 1023px) {
+    .album-meta {
+      grid-column: 1 / -1;
+    }
+
+    .album-text {
+      grid-column: 1 / -1;
+    }
+  }
+</style>

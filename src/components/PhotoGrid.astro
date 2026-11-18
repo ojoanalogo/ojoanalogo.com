@@ -1,0 +1,112 @@
+---
+/**
+ * Album grid: two even columns like a contact print. Landscape frames take
+ * the full row once their size is known; portraits pair up.
+ */
+import type { AlbumPhoto } from "../utils/albums";
+
+export interface Props {
+  photos: AlbumPhoto[];
+  group: string;
+}
+
+const { photos, group } = Astro.props;
+
+const fileName = (url: string) => url.split("/").pop()?.split("?")[0] ?? "photo";
+---
+
+<div class="photo-grid page-pad" data-photo-grid>
+  {
+    photos.map((photo, i) => (
+      <a
+        class:list={[
+          "cell",
+          photo.width && photo.height && photo.width > photo.height * 1.05 && "is-wide",
+        ]}
+        href={photo.src}
+        data-fslightbox={group}
+        data-umami-event="Photo click"
+        data-umami-event-photo-id={fileName(photo.src)}
+        data-demo={photo.demo ? "true" : undefined}
+      >
+        <span class="sr-only">Ver foto {i + 1} en grande</span>
+        <img
+          class="reveal"
+          src={photo.src}
+          alt={photo.alt}
+          width={photo.width}
+          height={photo.height}
+          loading={i < 2 ? "eager" : "lazy"}
+          decoding="async"
+          draggable="false"
+        />
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+
+  .cell {
+    display: block;
+    background: var(--color-wash);
+    cursor: zoom-in;
+    overflow: hidden;
+  }
+
+  .cell.is-wide {
+    grid-column: 1 / -1;
+  }
+
+  .cell img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition:
+      opacity 0.7s var(--ease-detent),
+      transform 1.2s var(--ease-detent);
+  }
+
+  /* unknown size until it loads: hold a portrait frame */
+  .cell img:not([width]):not(.is-loaded) {
+    aspect-ratio: 4 / 5;
+  }
+
+  @media (hover: hover) {
+    .cell:hover img {
+      transform: scale(1.015);
+    }
+  }
+
+  @media (max-width: 767px) {
+    .photo-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+  }
+</style>
+
+<script>
+  const setupGrid = () => {
+    document.querySelectorAll<HTMLImageElement>("[data-photo-grid] img").forEach((img) => {
+      const place = () => {
+        img.classList.add("is-loaded");
+        if (img.naturalWidth > img.naturalHeight * 1.05) {
+          img.closest(".cell")?.classList.add("is-wide");
+        }
+      };
+      if (img.complete && img.naturalWidth) place();
+      else img.addEventListener("load", place, { once: true });
+    });
+
+    (window as Window & { refreshFsLightbox?: () => void }).refreshFsLightbox?.();
+  };
+
+  document.addEventListener("astro:page-load", setupGrid);
+</script>
