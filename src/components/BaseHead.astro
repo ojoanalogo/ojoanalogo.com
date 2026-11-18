@@ -1,16 +1,24 @@
 ---
-import { ClientRouter } from 'astro:transitions';
+import { ClientRouter } from "astro:transitions";
 
 // Import the global.css file here so that it is included on
 // all pages through the use of the <BaseHead /> component.
 import "../styles/global.css";
+import site from "../data/site.json";
+
 export interface Props {
   title: string;
   description: string;
   socialImagePath?: string;
 }
 
-const { title, description, socialImagePath = "/share.jpg" } = Astro.props;
+const { title, description, socialImagePath } = Astro.props;
+const ogImage = (socialImagePath || site.ogImage || "").trim();
+const ogImageUrl = ogImage
+  ? ogImage.startsWith("http")
+    ? ogImage
+    : new URL(ogImage, Astro.url).href
+  : undefined;
 
 const isProd = import.meta.env.PROD;
 ---
@@ -44,14 +52,14 @@ const isProd = import.meta.env.PROD;
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content={new URL(socialImagePath, Astro.url)} />
+{ogImageUrl && <meta property="og:image" content={ogImageUrl} />}
 
 <!-- Twitter -->
-<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:card" content={ogImageUrl ? "summary_large_image" : "summary"} />
 <meta property="twitter:url" content={Astro.url} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
-<meta property="twitter:image" content={new URL(socialImagePath, Astro.url)} />
+{ogImageUrl && <meta property="twitter:image" content={ogImageUrl} />}
 
 <!-- FSLightbox for image gallery -->
 <script is:inline src="/scripts/fslightbox.js"></script>

@@ -62,6 +62,23 @@ collections:
                 label: Alt text
                 widget: string
                 required: false
+      - name: site
+        label: Site images
+        file: src/data/site.json
+        format: json
+        fields:
+          - name: portraitUrl
+            label: About portrait (R2 URL)
+            widget: image
+            required: false
+            media_libraries:
+              default: false
+          - name: ogImage
+            label: Social / OG image (R2 URL)
+            widget: image
+            required: false
+            media_libraries:
+              default: false
 
   - name: gallery
     label: Albums

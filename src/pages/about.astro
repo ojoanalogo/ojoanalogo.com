@@ -1,7 +1,8 @@
 ---
-import { Picture } from "astro:assets";
-import authorPic from "../assets/me.jpg";
+import site from "../data/site.json";
 import BaseLayout from "../layouts/BaseLayout.astro";
+
+const portraitUrl = site.portraitUrl?.trim() || "";
 ---
 
 <BaseLayout sideBarActiveItemID="about">
@@ -11,13 +12,23 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <section class="py-8">
         <div class="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
           <div class="lg:w-2/5 flex-shrink-0">
-            <Picture
-              class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
-              src={authorPic}
-              widths={[300, 500, 700]}
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
-              alt="Alfonso Reyes - Fotógrafo analógico"
-            />
+            {
+              portraitUrl ? (
+                <img
+                  class="w-full rounded-2xl shadow-xl object-cover aspect-[4/5] hover:shadow-2xl transition-all duration-500 ease-out"
+                  src={portraitUrl}
+                  alt="Alfonso Reyes - Fotógrafo analógico"
+                  width={700}
+                  height={875}
+                  decoding="async"
+                />
+              ) : (
+                <div
+                  class="w-full rounded-2xl aspect-[4/5] bg-beige-200"
+                  aria-hidden="true"
+                />
+              )
+            }
           </div>
 
           <div class="lg:w-3/5 space-y-8">

@@ -6,10 +6,24 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 const photos = getFeaturedPhotos();
 ---
 
-<BaseLayout sideBarActiveItemID="home">
+<BaseLayout sideBarActiveItemID="home" compactFooter={photos.length > 0}>
   <div class="flex-1 flex flex-col min-h-0 py-3 md:py-4">
     <div class="flex-1 flex flex-col min-h-0 w-full max-w-[95%] lg:max-w-[92%] xl:max-w-[88%] mx-auto">
-      <CarouselGallery photos={photos} randomize={true} />
+      {
+        photos.length > 0 ? (
+          <CarouselGallery photos={photos} randomize={true} />
+        ) : (
+          <div class="flex-1 flex items-center justify-center text-center px-6">
+            <p class="text-beige-700 text-lg">
+              Sin fotos en el carrusel todavía. Agrégalas desde{" "}
+              <a class="underline" href="/admin/" data-astro-reload>
+                /admin
+              </a>
+              .
+            </p>
+          </div>
+        )
+      }
     </div>
   </div>
 </BaseLayout>
