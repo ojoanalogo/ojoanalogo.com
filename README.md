@@ -1,55 +1,47 @@
-# Astro Starter Kit: Basics
+# ojoanalogo.com
 
-```
-npm create astro@latest -- --template basics
-```
+Analog photography site. Astro + Cloudflare Pages + Sveltia CMS + R2.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
+## Commands
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-![basics](https://user-images.githubusercontent.com/4677417/186188965-73453154-fdec-4d6b-9c34-cb35c248ae5b.png)
-
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```
-/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── components/
-│   │   └── Card.astro
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
+```bash
+pnpm install
+pnpm dev      # http://localhost:4321
+pnpm build
+pnpm check
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+CMS (dev): [http://localhost:4321/admin/index.html](http://localhost:4321/admin/index.html)  
+CMS (prod): [https://ojoanalogo.com/admin/](https://ojoanalogo.com/admin/)
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## How content works
 
-Any static assets, like images, can be placed in the `public/` directory.
+There is no separate “photo database.”
 
-## 🧞 Commands
+| What | Where |
+| --- | --- |
+| **Photo files** | Cloudflare **R2** (`media.ojoanalogo.com`) |
+| **Catalog** (which photos, album titles, landing order) | **Git** — JSON / Markdown in this repo |
 
-All commands are run from the root of the project, from a terminal:
+When you save in the CMS:
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:3000`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+1. Images upload straight to **R2** (browser → R2; not git).
+2. Metadata commits to **GitHub** (`featured.json`, `site.json`, `src/content/gallery/.../index.md` with image URLs).
+3. Cloudflare Pages rebuilds the site from that commit.
 
-## 👀 Want to learn more?
+So: **R2 = binaries**, **git = the registry** (URLs + text).
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Edit content
+
+1. Open `/admin/`, sign in (GitHub PAT or OAuth).
+2. **Landing** → carousel photos, about portrait, OG image.
+3. **Albums** → create/edit galleries and their photo lists.
+4. Publish → wait for Pages deploy.
+
+R2 credentials live in `public/admin/config.yml` (Access Key ID is public by design; the Secret is entered once in the CMS UI and stays in the browser).
+
+## Stack notes
+
+- Node `24.16` / pnpm `11` (see `.nvmrc`)
+- Deploy: Cloudflare Pages (`pnpm build` → `dist`, `NODE_VERSION=24.16.0`)
+- CI: `.github/workflows/ci.yml` (check + build only)

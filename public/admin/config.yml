@@ -21,9 +21,9 @@ backend:
   # Prefer OAuth once the worker is live; token works today for a solo admin.
   auth_methods: [token, oauth]
 
-# Fallback only — prefer R2 (media_libraries) for all photo uploads.
-media_folder: public/uploads
-public_folder: /uploads
+# Unused with R2-only image fields (default: false); kept for Decap compatibility.
+media_folder: static/unused
+public_folder: /unused
 
 media_libraries:
   cloudflare_r2:
@@ -63,18 +63,24 @@ collections:
                 widget: string
                 required: false
       - name: site
-        label: Site images
+        label: Site
         file: src/data/site.json
         format: json
         fields:
+          - name: title
+            label: Site title
+            widget: string
+          - name: description
+            label: Site description
+            widget: text
           - name: portraitUrl
-            label: About portrait (R2 URL)
+            label: About portrait
             widget: image
             required: false
             media_libraries:
               default: false
           - name: ogImage
-            label: Social / OG image (R2 URL)
+            label: Social / OG image
             widget: image
             required: false
             media_libraries:

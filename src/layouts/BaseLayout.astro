@@ -2,13 +2,12 @@
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
-
-import { SITE_DESCRIPTION, SITE_TITLE } from "../config";
+import site from "../data/site.json";
 
 const {
   socialImagePath,
-  title = SITE_TITLE,
-  description = SITE_DESCRIPTION,
+  title = site.title,
+  description = site.description,
   navbarActiveItemID,
   compactFooter = false,
 } = Astro.props;
@@ -32,7 +31,7 @@ const {
       compactFooter && "h-dvh max-h-dvh overflow-hidden",
     ]}
   >
-    <Header title={SITE_TITLE} navbarActiveItemID={navbarActiveItemID} />
+    <Header title={site.title} navbarActiveItemID={navbarActiveItemID} />
     <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col min-h-0">
       <slot />
     </main>

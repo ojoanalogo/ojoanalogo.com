@@ -38,11 +38,15 @@ const links: Array<NavLink> = [
     id: "home",
     url: "/",
   },
-  {
-    title: "galería",
-    id: "gallery",
-    children: galleryChildren,
-  },
+  ...(galleryChildren.length > 0
+    ? [
+        {
+          title: "galería",
+          id: "gallery",
+          children: galleryChildren,
+        } satisfies NavLink,
+      ]
+    : []),
   {
     title: "quién soy",
     id: "about",

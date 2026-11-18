@@ -19,9 +19,5 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
-# Local CMS fallback uploads (prefer R2)
-public/uploads/*
-!public/uploads/.gitkeep
-
 # macOS-specific files
 .DS_Store

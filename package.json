@@ -14,9 +14,7 @@
     "@astrojs/mdx": "8.1.6",
     "@astrojs/sitemap": "3.7.5",
     "astro": "7.4.12",
-    "dayjs": "1.11.23",
     "sharp": "0.35.5",
-    "simplelightbox": "2.14.3",
     "swiper": "11.2.10"
   },
   "devDependencies": {

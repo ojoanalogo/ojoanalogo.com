@@ -7,16 +7,6 @@ const cmsPhotoSchema = z.object({
   alt: z.string().optional(),
 });
 
-const blogSchema = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  publishDate: z.coerce.date(),
-  updatedDate: z.coerce.date().optional(),
-  coverImage: z.string().optional(),
-  published: z.boolean(),
-  tags: z.array(z.string()).optional(),
-});
-
 const gallerySchema = z.object({
   title: z.string(),
   description: z.string().optional(),
@@ -25,13 +15,8 @@ const gallerySchema = z.object({
   photos: z.array(cmsPhotoSchema).optional(),
 });
 
-export type CollectionsSchema = z.infer<typeof blogSchema>;
 export type GallerySchema = z.infer<typeof gallerySchema>;
-
-const blogCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/blog' }),
-  schema: blogSchema,
-});
+export type CmsPhoto = z.infer<typeof cmsPhotoSchema>;
 
 const galleryCollection = defineCollection({
   loader: glob({ pattern: '**/index.{md,mdx}', base: './src/content/gallery' }),
@@ -39,6 +24,5 @@ const galleryCollection = defineCollection({
 });
 
 export const collections = {
-  blog: blogCollection,
   gallery: galleryCollection,
 };

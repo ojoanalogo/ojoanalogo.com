@@ -20,15 +20,9 @@ importers:
       astro:
         specifier: 7.4.12
         version: 7.4.12(@types/node@24.19.2)(jiti@2.7.0)(yaml@2.9.1)
-      dayjs:
-        specifier: 1.11.23
-        version: 1.11.23
       sharp:
         specifier: 0.35.5
         version: 0.35.5(@types/node@24.19.2)
-      simplelightbox:
-        specifier: 2.14.3
-        version: 2.14.3
       swiper:
         specifier: 11.2.10
         version: 11.2.10
@@ -964,9 +958,6 @@ packages:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
 
-  dayjs@1.11.23:
-    resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
-
   defu@6.1.7:
     resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
 
@@ -1492,9 +1483,6 @@ packages:
   shiki@4.6.0:
     resolution: {integrity: sha512-imjLsVHgPuWhvpU3P+zOekvMYqnel7QmKsFC4Sn0fCuAvaaalBsxwKEsrU8Ko5BdFnZA6Go/8a0RzahS634UgA==}
     engines: {node: '>=20'}
-
-  simplelightbox@2.14.3:
-    resolution: {integrity: sha512-k2MxHsoRoFDPumO7KTPyqvUPtXAnykCuEZ5xQ7YN8Jq4XF+QLyhWVblXLRCYMRp4+TiNR7PCrcpocW7oQmgSQQ==}
 
   sisteransi@2.0.0:
     resolution: {integrity: sha512-2WCqLdt12eN6ehLI50S2/ZxoowXU3DD1KVPRyVP0WEsFahrGZZmCdq1K59qjJljMRIDTwx1D9YaRK+hDneBUMg==}
@@ -2805,8 +2793,6 @@ snapshots:
     dependencies:
       css-tree: 2.2.1
 
-  dayjs@1.11.23: {}
-
   defu@6.1.7: {}
 
   dequal@2.0.3: {}
@@ -3302,8 +3288,6 @@ snapshots:
       '@shikijs/types': 4.6.0
       '@shikijs/vscode-textmate': 10.1.0
       '@types/hast': 3.0.5
-
-  simplelightbox@2.14.3: {}
 
   sisteransi@2.0.0: {}
 
