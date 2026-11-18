@@ -1,4 +1,7 @@
 ---
+import { getCollection } from "astro:content";
+import { gallerySlug } from "../utils/gallery";
+
 const { title, navbarActiveItemID } = Astro.props;
 const activeClasses = ["text-white", "opacity-100"];
 
@@ -15,6 +18,20 @@ interface NavLink {
   }>;
 }
 
+const galleryEntries = await getCollection("gallery");
+const galleryChildren = galleryEntries
+  .map((entry) => {
+    const slug = gallerySlug(entry);
+    return {
+      title: entry.data.title,
+      url: `/${slug}`,
+      id: `works-${slug}`,
+      date: entry.data.date?.valueOf() ?? 0,
+    };
+  })
+  .sort((a, b) => b.date - a.date)
+  .map(({ title, url, id }) => ({ title, url, id }));
+
 const links: Array<NavLink> = [
   {
     title: "inicio",
@@ -24,23 +41,7 @@ const links: Array<NavLink> = [
   {
     title: "galería",
     id: "gallery",
-    children: [
-      {
-        title: "Narnia",
-        url: "/narnia",
-        id: "works-narnia",
-      },
-      {
-        title: "Japón",
-        url: "/japan",
-        id: "works-japan",
-      },
-      {
-        title: "Cows",
-        url: "/cows",
-        id: "works-cows",
-      },
-    ],
+    children: galleryChildren,
   },
   {
     title: "quién soy",

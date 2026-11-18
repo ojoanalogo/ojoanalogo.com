@@ -1,0 +1,106 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms@0.269.0/schema/sveltia-cms.json
+#
+# Setup checklist:
+# 1. Create an R2 bucket (e.g. ojoanalogo-media) + public access
+#    (r2.dev URL for testing, or media.ojoanalogo.com custom domain).
+# 2. Create an R2 API token (Object Read & Write) for that bucket.
+# 3. Fill cloudflare_r2 below: account_id, access_key_id, bucket, public_url.
+# 4. Set R2 CORS (GET/PUT/DELETE/HEAD + AllowedHeaders * + ExposeHeaders ETag)
+#    for https://ojoanalogo.com and http://localhost:4321.
+# 5. Sign in at /admin/ with a GitHub Personal Access Token (repo scope),
+#    or deploy https://github.com/sveltia/sveltia-cms-auth and set backend.base_url.
+# 6. Upload photos via the CMS — they go to R2; metadata commits to this repo.
+# 7. Deploy via Cloudflare Pages (Git integration); no GitHub Pages.
+
+backend:
+  name: github
+  repo: ojoanalogo/ojoanalogo.com
+  branch: main
+  # After deploying sveltia-cms-auth on Cloudflare Workers, uncomment:
+  # base_url: https://YOUR-AUTH-WORKER.workers.dev
+  # Prefer OAuth once the worker is live; token works today for a solo admin.
+  auth_methods: [token, oauth]
+
+# Fallback only — prefer R2 (media_libraries) for all photo uploads.
+media_folder: public/uploads
+public_folder: /uploads
+
+media_libraries:
+  cloudflare_r2:
+    # Cloudflare account ID (R2 overview / dashboard URL).
+    account_id: a8c4cf699a46a72eb60e88b8e3043a94
+    # R2 API token Access Key ID (64 hex chars). Secret is entered in the CMS UI.
+    access_key_id: d12b6d7fe1ff7dd034bde5b30cb2cec2
+    bucket: ojoanalogo-media
+    # Public base URL for the bucket (r2.dev or https://media.ojoanalogo.com).
+    public_url: https://media.ojoanalogo.com
+    prefix: uploads/
+
+output:
+  omit_empty_optional_fields: true
+
+collections:
+  - name: featured
+    label: Landing
+    files:
+      - name: featured
+        label: Landing carousel
+        file: src/data/featured.json
+        format: json
+        fields:
+          - name: photos
+            label: Photos
+            widget: list
+            summary: '{{fields.alt}}'
+            fields:
+              - name: image
+                label: Image
+                widget: image
+                media_libraries:
+                  default: false
+              - name: alt
+                label: Alt text
+                widget: string
+                required: false
+
+  - name: gallery
+    label: Albums
+    label_singular: Album
+    folder: src/content/gallery
+    path: '{{slug}}/index'
+    create: true
+    slug: '{{fields.slug}}'
+    fields:
+      - name: title
+        label: Title
+        widget: string
+      - name: slug
+        label: URL slug
+        widget: string
+        hint: Used in the URL, e.g. japan → /japan
+      - name: description
+        label: Description
+        widget: string
+        required: false
+      - name: date
+        label: Date
+        widget: datetime
+        required: false
+      - name: photos
+        label: Photos
+        widget: list
+        summary: '{{fields.alt}}'
+        fields:
+          - name: image
+            label: Image
+            widget: image
+            media_libraries:
+              default: false
+          - name: alt
+            label: Alt text
+            widget: string
+            required: false
+      - name: body
+        label: Body
+        widget: markdown
+        required: false

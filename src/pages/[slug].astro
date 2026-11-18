@@ -1,34 +1,27 @@
 ---
-import { getCollection } from "astro:content";
+import { getCollection, render } from "astro:content";
 import Gallery from "../components/Gallery.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { gallerySlug } from "../utils/gallery";
+import { resolveGalleryPhotos } from "../utils/galleryPhotos";
 
 export async function getStaticPaths() {
-  // Get all gallery entries to determine which galleries exist
   const galleryEntries = await getCollection("gallery");
 
-  // Also check for folders with images but no markdown
   const allContentFiles = import.meta.glob(
     "../content/gallery/**/*.{png,jpg,jpeg,gif,webp}",
-    {
-      eager: true,
-    },
+    { eager: true },
   );
 
-  // Extract unique folder names from file paths
   const folderNames = new Set<string>();
 
-  // Add galleries that have markdown files
   galleryEntries.forEach((entry) => {
-    folderNames.add(entry.slug);
+    folderNames.add(gallerySlug(entry));
   });
 
-  // Add galleries that have images but might not have markdown
   Object.keys(allContentFiles).forEach((path) => {
     const match = path.match(/\/gallery\/([^\/]+)\//);
-    if (match) {
-      folderNames.add(match[1]);
-    }
+    if (match) folderNames.add(match[1]);
   });
 
   return Array.from(folderNames).map((folder) => ({
@@ -38,47 +31,35 @@ export async function getStaticPaths() {
 
 const { slug } = Astro.params;
 
-// Try to load markdown content for this gallery
 let galleryContent = null;
 let Content = null;
+let cmsPhotos = undefined;
+
 try {
   const galleryEntries = await getCollection("gallery");
-  const entry = galleryEntries.find((entry) => entry.slug === slug);
+  const entry = galleryEntries.find((entry) => gallerySlug(entry) === slug);
 
   if (entry) {
     galleryContent = entry.data;
-    const { Content: MarkdownContent } = await entry.render();
+    cmsPhotos = entry.data.photos;
+    const { Content: MarkdownContent } = await render(entry);
     Content = MarkdownContent;
   }
-} catch (error) {
-  // Gallery content is optional, so we continue without it
+} catch {
   console.log(`No gallery content found for ${slug}`);
 }
 
-// Dynamically import all images from the specific gallery folder
 const contentImages = import.meta.glob(
   "../content/gallery/**/*.{png,jpg,jpeg,gif,webp}",
-  {
-    eager: true,
-  },
-) as Record<string, any>;
+  { eager: true },
+) as Record<string, { default: import("astro").ImageMetadata }>;
 
-// Filter images for the current slug and create the format expected by Gallery component
-const photos = Object.entries(contentImages)
-  .filter(([path]) => path.includes(`/gallery/${slug}/`))
-  .map(([path, image]) => ({
-    default: image.default,
-  }));
+const photos = resolveGalleryPhotos(cmsPhotos, contentImages, slug ?? "");
 
-// Sort photos by their src path for consistent ordering
-photos.sort((a, b) => a.default.src.localeCompare(b.default.src));
-
-// If no photos found, return 404
 if (photos.length === 0) {
   return Astro.redirect("/404");
 }
 
-// Use markdown title if available, otherwise use slug
 const pageTitle = galleryContent?.title || slug;
 ---
 
@@ -101,7 +82,7 @@ const pageTitle = galleryContent?.title || slug;
         )
       }
     </header>
-    
+
     {
       galleryContent && Content && (
         <div
@@ -112,7 +93,7 @@ const pageTitle = galleryContent?.title || slug;
         </div>
       )
     }
-    
+
     <Gallery photos={photos} />
   </div>
 </BaseLayout>

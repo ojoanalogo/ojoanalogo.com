@@ -1,32 +1,29 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
-import type { CollectionsSchema } from "../../content/config";
+import { getCollection, render, type CollectionEntry } from "astro:content";
+import type { CollectionsSchema } from "../../content.config";
 import CollectionLayout from "../../layouts/CollectionLayout.astro";
 import { getPhotoGlobal } from "../../utils/data.astro";
 
 export async function getStaticPaths() {
-  const postEntries = await getCollection("collections");
+  const postEntries = await getCollection("blog");
   return postEntries.map((entry) => ({
-    params: { slug: entry.slug },
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
 
 interface Props {
-  entry: CollectionEntry<"collections">;
+  entry: CollectionEntry<"blog">;
 }
 
 const { entry } = Astro.props;
 const post: CollectionsSchema = entry.data;
-const { Content } = await entry.render();
+const { Content } = await render(entry);
 
-const photos: {
-  film?: Record<string, any>[],
-  digital?: Record<string, any>[]
-} | undefined = await getPhotoGlobal(entry.slug.toString()) ?? undefined;
+const photos = await getPhotoGlobal(entry.id.toString());
 
 const featuredPhoto = await import(
-  `../../content/collections/${entry.slug}/assets/${entry.data.coverImage}.jpg`
+  `../../content/blog/${entry.id}/assets/${entry.data.coverImage}.jpg`
 );
 ---
 

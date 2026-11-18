@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@theme {
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Fraunces', system-ui, sans-serif;
+  --font-display: 'Oranienbaum', Georgia, serif;
+  --font-body: 'Fraunces', Georgia, serif;
+
+  --color-beige-50: #faf7f2;
+  --color-beige-100: #f5f1eb;
+  --color-beige-200: #ebe3d4;
+  --color-beige-300: #ddd0bd;
+  --color-beige-400: #c9b896;
+  --color-beige-500: #b8a082;
+  --color-beige-600: #a08a70;
+  --color-beige-700: #86725c;
+  --color-beige-800: #6d5f4e;
+  --color-beige-900: #594f42;
+}
+
+@utility prose-beige {
+  --tw-prose-body: #594f42;
+  --tw-prose-headings: #594f42;
+  --tw-prose-lead: #6d5f4e;
+  --tw-prose-links: #86725c;
+  --tw-prose-bold: #594f42;
+  --tw-prose-counters: #a08a70;
+  --tw-prose-bullets: #c9b896;
+  --tw-prose-hr: #ebe3d4;
+  --tw-prose-quotes: #594f42;
+  --tw-prose-quote-borders: #ebe3d4;
+  --tw-prose-captions: #a08a70;
+  --tw-prose-code: #594f42;
+  --tw-prose-pre-code: #f5f1eb;
+  --tw-prose-pre-bg: #594f42;
+  --tw-prose-th-borders: #ddd0bd;
+  --tw-prose-td-borders: #ebe3d4;
+}

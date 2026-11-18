@@ -6,6 +6,7 @@ dist/
 
 # dependencies
 node_modules/
+.pnpm-store
 
 # logs
 npm-debug.log*
@@ -15,7 +16,12 @@ pnpm-debug.log*
 
 # environment variables
 .env
-.env.production
+.env.*
+!.env.example
+
+# Local CMS fallback uploads (prefer R2)
+public/uploads/*
+!public/uploads/.gitkeep
 
 # macOS-specific files
 .DS_Store

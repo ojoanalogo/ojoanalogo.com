@@ -1,5 +1,6 @@
-import { getImage } from "astro:assets";
-import type { ImageMetadata } from "astro";
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { isRemoteSrc, type PhotoSource } from '../types/photos';
 
 export type OptimizedSources = {
   webpSrc: string;
@@ -21,6 +22,18 @@ function clampWidths(originalWidth: number, candidates: number[]) {
   return [...new Set(capped)].sort((a, b) => a - b);
 }
 
+/** Remote R2/CDN URLs — served as-is (optimize at the edge later if needed). */
+function remotePassthrough(url: string, sizes: string): OptimizedSources {
+  return {
+    webpSrc: url,
+    webpSrcSet: url,
+    avifSrcSet: url,
+    width: 1600,
+    height: 1200,
+    sizes,
+  };
+}
+
 /**
  * Build responsive sources with explicit per-width transforms.
  * Avoids Astro's `widths` helper, which can still emit a near-original `src`.
@@ -37,28 +50,25 @@ async function buildResponsiveSources(
   const [webpVariants, avifVariants] = await Promise.all([
     Promise.all(
       safeWidths.map((width) =>
-        getImage({ src, width, format: "webp", quality: quality.webp }),
+        getImage({ src, width, format: 'webp', quality: quality.webp }),
       ),
     ),
     Promise.all(
       safeWidths.map((width) =>
-        getImage({ src, width, format: "avif", quality: quality.avif }),
+        getImage({ src, width, format: 'avif', quality: quality.avif }),
       ),
     ),
   ]);
 
   const webpSrcSet = webpVariants
     .map((img, i) => `${img.src} ${safeWidths[i]}w`)
-    .join(", ");
+    .join(', ');
   const avifSrcSet = avifVariants
     .map((img, i) => `${img.src} ${safeWidths[i]}w`)
-    .join(", ");
+    .join(', ');
 
   const primary = webpVariants[webpVariants.length - 1];
-  const height = Math.max(
-    1,
-    Math.round((src.height / src.width) * maxWidth),
-  );
+  const height = Math.max(1, Math.round((src.height / src.width) * maxWidth));
 
   return {
     webpSrc: primary.src,
@@ -72,27 +82,26 @@ async function buildResponsiveSources(
 
 /** Featured carousel / large display photos */
 export async function optimizeDisplayPhoto(
-  src: ImageMetadata,
-  sizes = "(max-width: 768px) 92vw, (max-width: 1280px) 80vw, 1200px",
+  src: PhotoSource,
+  sizes = '(max-width: 768px) 92vw, (max-width: 1280px) 80vw, 1200px',
 ): Promise<OptimizedSources> {
-  return buildResponsiveSources(
-    src,
-    [...DISPLAY_WIDTHS],
-    { webp: 70, avif: 62 },
-    sizes,
-  );
+  if (isRemoteSrc(src)) return remotePassthrough(src, sizes);
+  return buildResponsiveSources(src, [...DISPLAY_WIDTHS], { webp: 70, avif: 62 }, sizes);
 }
 
 /** Masonry grid thumbnails */
 export async function optimizeThumbPhoto(
-  src: ImageMetadata,
+  src: PhotoSource,
   bigger = false,
 ): Promise<OptimizedSources> {
+  const sizes = bigger
+    ? '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+    : '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw';
+
+  if (isRemoteSrc(src)) return remotePassthrough(src, sizes);
+
   const maxW = bigger ? 1100 : THUMB_MAX_WIDTH;
   const target = Math.min(Math.round(src.width / 2), maxW);
-  const sizes = bigger
-    ? "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-    : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw";
 
   return buildResponsiveSources(
     src,
@@ -103,12 +112,14 @@ export async function optimizeThumbPhoto(
 }
 
 /** Lightbox / full-view — still far smaller than multi‑MB film scans */
-export async function optimizeLightboxPhoto(src: ImageMetadata): Promise<string> {
+export async function optimizeLightboxPhoto(src: PhotoSource): Promise<string> {
+  if (isRemoteSrc(src)) return src;
+
   const width = Math.min(src.width, LIGHTBOX_MAX_WIDTH);
   const image = await getImage({
     src,
     width,
-    format: "webp",
+    format: 'webp',
     quality: 75,
   });
   return image.src;

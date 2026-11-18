@@ -1,12 +1,12 @@
 ---
-import type { ImageMetadata } from "astro";
 import {
   optimizeLightboxPhoto,
   optimizeThumbPhoto,
 } from "../utils/optimizePhoto";
+import { isRemoteSrc, type PhotoSource } from "../types/photos";
 
 export interface Props {
-  photos: Array<any>;
+  photos: Array<{ default: PhotoSource; alt?: string }>;
   newestFirst?: boolean;
   biggerPictures?: boolean;
 }
@@ -47,20 +47,23 @@ const classList = biggerPictures
     ];
 
 const items = await Promise.all(
-  (photos ?? []).map(async (photo: any, index: number) => {
-    const picture = (await photo.default) as ImageMetadata;
-    const fileName = picture.src.split("/").pop() ?? "";
+  (photos ?? []).map(async (photo, index: number) => {
+    const picture = photo.default;
+    const fileName = isRemoteSrc(picture)
+      ? picture.split("/").pop()?.split("?")[0] ?? "photo"
+      : picture.src.split("/").pop() ?? "";
     const thumb = await optimizeThumbPhoto(picture, biggerPictures);
     const lightboxSrc = await optimizeLightboxPhoto(picture);
-    const lightboxPhotoUrl = import.meta.env.PROD
-      ? `https://ojoanalogo.com${lightboxSrc}`
-      : lightboxSrc;
+    const lightboxPhotoUrl =
+      isRemoteSrc(picture) || !import.meta.env.PROD
+        ? lightboxSrc
+        : `https://ojoanalogo.com${lightboxSrc}`;
 
     return {
       fileName,
       thumb,
       lightboxPhotoUrl,
-      // Eager-load the first few thumbs above the fold
+      alt: photo.alt ?? "",
       eager: index < 4,
     };
   }),
@@ -98,7 +101,7 @@ const items = await Promise.all(
               height={item.thumb.height}
               decoding="async"
               loading={item.eager ? "eager" : "lazy"}
-              alt=""
+              alt={item.alt}
             />
           </picture>
         </a>

@@ -1,12 +1,27 @@
 ---
-export const getPhotoGlobal = async (slug: string) => {
+import type { GalleryPhotoItem } from "./galleryPhotos";
+
+export const getPhotoGlobal = async (
+  slug: string,
+): Promise<
+  | {
+      film?: GalleryPhotoItem[];
+      digital?: GalleryPhotoItem[];
+    }
+  | undefined
+> => {
   switch (slug) {
-    case "narnia-2023":
+    case "narnia-2023": {
+      const images = import.meta.glob<{ default: import("astro").ImageMetadata }>(
+        "../content/blog/narnia-2023/assets/*.{jpg,jpeg,png,webp}",
+        { eager: true },
+      );
       return {
-        film: await Astro.glob(
-          "../content/collections/narnia-2023/assets/*.jpg",
-        ),
+        film: Object.values(images).map((image) => ({
+          default: image.default,
+        })),
       };
+    }
   }
 };
 ---

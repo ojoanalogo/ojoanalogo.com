@@ -12,7 +12,10 @@ const totalSlides = photos?.length ?? 0;
 
 const slides = await Promise.all(
   (photos ?? []).map(async (photo) => {
-    const fileName = photo.src.src.split("/").pop() ?? "";
+    const fileName =
+      typeof photo.src === "string"
+        ? photo.src.split("/").pop()?.split("?")[0] ?? "photo"
+        : photo.src.src.split("/").pop() ?? "";
     const sources = await optimizeDisplayPhoto(photo.src, "(max-width: 768px) 90vw, (max-width: 1280px) 70vw, 60vw");
     return { ...sources, alt: photo.alt, fileName };
   }),
@@ -31,37 +34,29 @@ const slides = await Promise.all(
                 data-umami-event="Carousel photo click"
                 data-umami-event-photo-id={slide.fileName}
               >
-                <div class="frame-outer">
-                  <div class="frame-fillet">
-                    <div class="frame-mat">
-                      <div class="frame-window">
-                        <picture>
-                          <source
-                            type="image/avif"
-                            data-srcset={slide.avifSrcSet}
-                            sizes={slide.sizes}
-                          />
-                          <source
-                            type="image/webp"
-                            data-srcset={slide.webpSrcSet}
-                            sizes={slide.sizes}
-                          />
-                          <img
-                            class="framed-photo"
-                            data-src={slide.webpSrc}
-                            data-srcset={slide.webpSrcSet}
-                            data-sizes={slide.sizes}
-                            width={slide.width}
-                            height={slide.height}
-                            alt={slide.alt}
-                            decoding="async"
-                            draggable="false"
-                          />
-                        </picture>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <picture>
+                  <source
+                    type="image/avif"
+                    data-srcset={slide.avifSrcSet}
+                    sizes={slide.sizes}
+                  />
+                  <source
+                    type="image/webp"
+                    data-srcset={slide.webpSrcSet}
+                    sizes={slide.sizes}
+                  />
+                  <img
+                    class="showcase-photo"
+                    data-src={slide.webpSrc}
+                    data-srcset={slide.webpSrcSet}
+                    data-sizes={slide.sizes}
+                    width={slide.width}
+                    height={slide.height}
+                    alt={slide.alt}
+                    decoding="async"
+                    draggable="false"
+                  />
+                </picture>
               </a>
             </div>
           </div>
@@ -125,7 +120,7 @@ const slides = await Promise.all(
   const hydrateSlide = (slide: Element | null | undefined, eager = false): void => {
     if (!slide) return;
     const picture = slide.querySelector("picture");
-    const img = slide.querySelector("img.framed-photo") as HTMLImageElement | null;
+    const img = slide.querySelector("img.showcase-photo") as HTMLImageElement | null;
     if (!img || img.dataset.hydrated === "true") return;
 
     picture?.querySelectorAll("source[data-srcset]").forEach((source) => {
@@ -179,7 +174,8 @@ const slides = await Promise.all(
     el.dataset.dir = dir;
 
     if (useWalk) {
-      swiper.setTransition(1250);
+      // Swiper types omit setTransition; runtime API is stable.
+      (swiper as Swiper & { setTransition: (duration: number) => void }).setTransition(1250);
     }
   };
 
@@ -259,15 +255,6 @@ const slides = await Promise.all(
 <style>
   :root {
     --swiper-navigation-size: 0;
-    --frame-walnut: #4a3428;
-    --frame-walnut-mid: #3a281e;
-    --frame-walnut-dark: #241810;
-    --frame-highlight: rgba(232, 210, 176, 0.28);
-    --fillet-light: #d4bc8c;
-    --fillet-mid: #b89562;
-    --fillet-dark: #8a6a3e;
-    --mat-paper: #f7f3ec;
-    --mat-paper-edge: #e8dfd2;
   }
 
   .gallery-showcase {
@@ -313,89 +300,17 @@ const slides = await Promise.all(
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: min(90vw, 1100px);
+    max-width: min(92vw, 1200px);
     max-height: 100%;
     text-decoration: none;
     cursor: default;
     will-change: transform;
   }
 
-  /* Walnut moulding with bevelled edges */
-  .frame-outer {
-    position: relative;
-    padding: 13px;
-    max-height: 100%;
-    display: flex;
-    flex-direction: column;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, transparent 38%, rgba(0, 0, 0, 0.28) 100%),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0%, transparent 30%, rgba(0, 0, 0, 0.18) 100%),
-      linear-gradient(145deg, #5c4334 0%, var(--frame-walnut) 32%, var(--frame-walnut-mid) 68%, var(--frame-walnut-dark) 100%);
-    box-shadow:
-      inset 0 1px 0 var(--frame-highlight),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-      inset 1px 0 0 rgba(255, 255, 255, 0.1),
-      inset -1px 0 0 rgba(0, 0, 0, 0.35),
-      0 1px 2px rgba(89, 79, 66, 0.18),
-      0 10px 20px rgba(89, 79, 66, 0.12),
-      0 24px 48px rgba(89, 79, 66, 0.1);
-  }
-
-  .frame-outer::before {
-    content: "";
-    position: absolute;
-    inset: 5px;
-    pointer-events: none;
-    box-shadow:
-      inset 0 0 0 1px rgba(0, 0, 0, 0.35),
-      inset 0 0 0 2px rgba(255, 255, 255, 0.07);
-  }
-
-  /* Thin brass fillet between wood and mat */
-  .frame-fillet {
-    padding: 3px;
-    background: linear-gradient(145deg, var(--fillet-light) 0%, var(--fillet-mid) 42%, var(--fillet-dark) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Paper mat (passe-partout) */
-  .frame-mat {
-    padding: clamp(14px, 2.8vw, 34px);
-    background:
-      linear-gradient(180deg, #fcfaf6 0%, var(--mat-paper) 55%, var(--mat-paper-edge) 100%);
-    box-shadow: inset 0 0 0 1px rgba(90, 70, 50, 0.06);
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Bevelled window cut into the mat */
-  .frame-window {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: #1a1816;
-    box-shadow:
-      1px 1px 0 rgba(255, 255, 255, 0.55),
-      -1px -1px 0 rgba(160, 138, 112, 0.35),
-      inset 2px 2px 3px rgba(0, 0, 0, 0.28),
-      inset -1px -1px 2px rgba(255, 255, 255, 0.06);
-  }
-
-  .framed-photo {
+  .showcase-photo {
     display: block;
     max-width: 100%;
-    max-height: calc(100dvh - 16rem);
+    max-height: calc(100dvh - 14rem);
     width: auto;
     height: auto;
     object-fit: contain;
@@ -403,7 +318,7 @@ const slides = await Promise.all(
     transition: opacity 0.35s ease;
   }
 
-  .framed-photo.is-hydrated {
+  .showcase-photo.is-hydrated {
     opacity: 1;
   }
 
@@ -477,7 +392,7 @@ const slides = await Promise.all(
       animation: none !important;
     }
 
-    .framed-photo {
+    .showcase-photo {
       transition: none;
       opacity: 1;
     }
@@ -580,22 +495,14 @@ const slides = await Promise.all(
       padding: 1rem 0.5rem 2rem;
     }
 
-    .frame-outer {
-      padding: 9px;
-    }
-
-    .frame-fillet {
-      padding: 2px;
-    }
-
-    .framed-photo {
-      max-height: calc(100dvh - 14rem);
+    .showcase-photo {
+      max-height: calc(100dvh - 12rem);
     }
   }
 
   @media (min-height: 900px) {
-    .framed-photo {
-      max-height: calc(100dvh - 18rem);
+    .showcase-photo {
+      max-height: calc(100dvh - 16rem);
     }
   }
 </style>

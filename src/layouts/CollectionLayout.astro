@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import localizedFormat from "dayjs/plugin/localizedFormat";
 import Gallery from "../components/Gallery.astro";
 import { SITE_TITLE } from "../config";
+import type { GalleryPhotoItem } from "../utils/galleryPhotos";
 import BaseLayout from "./BaseLayout.astro";
 
 export interface Props {
@@ -10,8 +11,8 @@ export interface Props {
   publishDate: Date;
   socialImagePath: string;
   photos: {
-    film?: Record<string, unknown>[];
-    digital?: Record<string, unknown>[];
+    film?: GalleryPhotoItem[];
+    digital?: GalleryPhotoItem[];
   } | undefined;
   updatedDate?: Date;
   description?: string;
