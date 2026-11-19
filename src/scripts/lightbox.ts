@@ -1,3 +1,4 @@
+import { allowCanvasCors } from '../types/photos';
 import type { WallPhoto } from '../types/wall';
 
 /**
@@ -118,6 +119,7 @@ function caption(els: Els, photos: WallPhoto[], index: number) {
 function upgrade(photo: WallPhoto, index: number) {
   const full = new Image();
   full.decoding = 'async';
+  allowCanvasCors(full, photo.full);
   full.src = photo.full;
   full
     .decode()
@@ -153,6 +155,7 @@ function upgrade(photo: WallPhoto, index: number) {
 function setSrc(els: Els, src: string) {
   els.root.classList.remove('is-loading');
   if (els.img.getAttribute('src') === src && els.img.complete) return;
+  allowCanvasCors(els.img, src);
   els.img.src = src;
   if (els.img.complete && els.img.naturalWidth) return;
   els.root.classList.add('is-loading');
@@ -168,7 +171,11 @@ function preloadNeighbours() {
   const { photos, index } = state;
   for (const d of [1, -1]) {
     const p = photos[(index + d + photos.length) % photos.length];
-    if (p) new Image().src = p.full;
+    if (p) {
+      const tip = new Image();
+      allowCanvasCors(tip, p.full);
+      tip.src = p.full;
+    }
   }
 }
 

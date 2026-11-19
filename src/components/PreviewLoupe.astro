@@ -316,12 +316,23 @@
               plateN,
             );
           } catch {
-            /* tainted / unloaded */
+            /* unload / decode race */
           }
         }
       }
 
-      const src = plateCtx.getImageData(0, 0, plateN, plateN).data;
+      let src: Uint8ClampedArray;
+      try {
+        src = plateCtx.getImageData(0, 0, plateN, plateN).data;
+      } catch {
+        // Cross-origin frame without CORS — leave the paper fill.
+        ctx.clearRect(0, 0, size, size);
+        ctx.fillStyle = fallBack;
+        ctx.beginPath();
+        ctx.arc(R, R, R - 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+      }
       const d = outBuf!.data;
 
       for (let y = 0; y < wSize; y++) {

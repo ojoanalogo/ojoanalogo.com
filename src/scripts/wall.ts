@@ -1,3 +1,4 @@
+import { allowCanvasCors } from '../types/photos';
 import type { WallPhoto } from '../types/wall';
 
 /**
@@ -332,6 +333,8 @@ export class ProximityWall {
     const p = this.photos[t.photo];
     if (!p) return;
     t.requested = true;
+    // R2 frames must be CORS-enabled or the loupe canvas taints on sample.
+    allowCanvasCors(t.img, p.src);
     if (p.srcset) {
       t.img.sizes = `${Math.ceil(Math.max(t.w, t.h) * MAX_SCALE)}px`;
       t.img.srcset = p.srcset;

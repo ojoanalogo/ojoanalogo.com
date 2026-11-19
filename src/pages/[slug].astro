@@ -122,6 +122,7 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
                     alt={photo.alt}
                     loading={i < 2 ? 'eager' : 'lazy'}
                     decoding="async"
+                    crossorigin={photo.src.startsWith('http') ? 'anonymous' : undefined}
                     width={photo.sized ? photo.w : undefined}
                     height={photo.sized ? photo.h : undefined}
                   />
@@ -152,7 +153,13 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
               {nextPreview.length > 0 && (
                 <span class="seq-next-thumbs" aria-hidden="true">
                   {nextPreview.map((p) => (
-                    <img src={p.src} alt="" loading="lazy" decoding="async" />
+                    <img
+                      src={p.src}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      crossorigin={p.src.startsWith('http') ? 'anonymous' : undefined}
+                    />
                   ))}
                 </span>
               )}

@@ -53,7 +53,13 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
       {
         photos.map((p) => (
           <li>
-            <img src={p.src} alt={p.alt} loading="lazy" decoding="async" />
+            <img
+              src={p.src}
+              alt={p.alt}
+              loading="lazy"
+              decoding="async"
+              crossorigin={p.src.startsWith('http') ? 'anonymous' : undefined}
+            />
           </li>
         ))
       }
