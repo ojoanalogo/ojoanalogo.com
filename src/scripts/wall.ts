@@ -39,6 +39,7 @@ interface Tile {
   vr: number;
   photo: number;
   w: number;
+  h: number;
   requested: boolean;
   delay: number;
   sx: number;
@@ -46,8 +47,9 @@ interface Tile {
   s: number;
 }
 
-const MIN_SCALE = 0.72;
-const MAX_SCALE = 1.6;
+/** Soft proximity bloom — enough depth without tiles pulsing as you move. */
+const MIN_SCALE = 0.92;
+const MAX_SCALE = 1.1;
 const INTRO_MS = 950;
 const DRAG_THRESHOLD = 5;
 
@@ -132,7 +134,6 @@ export class ProximityWall {
 
   private raf = 0;
   private lastT = 0;
-  private loupeT = 0;
   private introStart = 0;
   private introDone = false;
   private paused = false;
@@ -192,8 +193,8 @@ export class ProximityWall {
       this.colStep = clamp(this.vw * 0.46, 150, 280);
       this.baseH = this.colStep * 0.36;
     } else {
-      this.colStep = clamp(this.vw * 0.256, 236, 400);
-      this.baseH = clamp(this.colStep * 0.352, 92, 140);
+      this.colStep = clamp(this.vw * 0.3, 260, 520);
+      this.baseH = clamp(this.colStep * 0.4, 110, 200);
     }
     this.rowStep = this.colStep * 0.665;
 
@@ -250,6 +251,7 @@ export class ProximityWall {
           vr: Number.NaN,
           photo: -1,
           w: 0,
+          h: 0,
           requested: false,
           delay: 0,
           sx: 0,
@@ -259,6 +261,7 @@ export class ProximityWall {
         const d = Math.hypot(gx, gy) / this.halfDiag;
         tile.delay = 80 + d * 520 + Math.random() * 90;
         if (!this.introDone) el.style.opacity = '0';
+        tile.h = this.baseH;
         el.style.height = `${this.baseH}px`;
         this.tiles.push(tile);
       }
@@ -293,10 +296,19 @@ export class ProximityWall {
   }
 
   private sizeTile(t: Tile) {
-    t.w = this.baseH * (this.aspects[t.photo] ?? 1.5);
+    // Size by long edge so portraits aren't skinny stamps next to landscapes.
+    const aspect = this.aspects[t.photo] ?? 1.5;
+    const long = this.baseH * 1.5;
+    if (aspect >= 1) {
+      t.w = long;
+      t.h = long / aspect;
+    } else {
+      t.h = long;
+      t.w = long * aspect;
+    }
     t.el.style.width = `${t.w}px`;
-    t.el.style.height = `${this.baseH}px`;
-    t.s = Number.NaN; // force a transform write next frame (width changed)
+    t.el.style.height = `${t.h}px`;
+    t.s = Number.NaN; // force a transform write next frame (size changed)
   }
 
   private assign(t: Tile, vc: number, vr: number) {
@@ -321,7 +333,7 @@ export class ProximityWall {
     if (!p) return;
     t.requested = true;
     if (p.srcset) {
-      t.img.sizes = `${Math.ceil(t.w * MAX_SCALE)}px`;
+      t.img.sizes = `${Math.ceil(Math.max(t.w, t.h) * MAX_SCALE)}px`;
       t.img.srcset = p.srcset;
     }
     t.img.src = p.src;
@@ -451,9 +463,9 @@ export class ProximityWall {
     }
 
     if (this.finePointer && e.pointerType === 'mouse') {
-      // Lens drifts a third of the way toward the pointer.
-      this.focusTarget.x = this.vw / 2 + (px - this.vw / 2) * 0.33;
-      this.focusTarget.y = this.vh / 2 + (py - this.vh / 2) * 0.33;
+      // Keep the bloom near centre — only a light nudge toward the pointer.
+      this.focusTarget.x = this.vw / 2 + (px - this.vw / 2) * 0.14;
+      this.focusTarget.y = this.vh / 2 + (py - this.vh / 2) * 0.14;
       if (!this.drag?.active) this.updateCursor(e, px, py);
     }
     this.kick();
@@ -608,7 +620,7 @@ export class ProximityWall {
     this.cur.x += (this.target.x - this.cur.x) * a;
     this.cur.y += (this.target.y - this.cur.y) * a;
 
-    const fa = ease(0.07);
+    const fa = ease(0.035);
     this.focus.x += (this.focusTarget.x - this.focus.x) * fa;
     this.focus.y += (this.focusTarget.y - this.focus.y) * fa;
 
@@ -642,12 +654,14 @@ export class ProximityWall {
 
       if (!t.requested) {
         const hw = (t.w * s) / 2 + margin;
-        const hh = (this.baseH * s) / 2 + margin;
+        const hh = (t.h * s) / 2 + margin;
         if (sx + hw > 0 && sx - hw < this.vw && sy + hh > 0 && sy - hh < this.vh) this.request(t);
       }
 
       if (sx !== t.sx || sy !== t.sy || s !== t.s) {
-        t.el.style.transform = `translate3d(${(sx - t.w / 2).toFixed(2)}px, ${(sy - this.baseH / 2).toFixed(2)}px, 0) scale(${s.toFixed(4)})`;
+        const ss = s.toFixed(4);
+        t.el.style.setProperty('--wall-s', ss);
+        t.el.style.transform = `translate3d(${(sx - t.w / 2).toFixed(2)}px, ${(sy - t.h / 2).toFixed(2)}px, 0) scale(${ss})`;
         t.sx = sx;
         t.sy = sy;
         t.s = s;
@@ -669,18 +683,22 @@ export class ProximityWall {
     if (this.root.matches(':focus-visible')) this.markCentre(true);
     this.opts.onMove?.(this.cur.x, this.cur.y);
 
-    const moving =
+    const planeMoving =
       Math.abs(this.target.x - this.cur.x) > 0.05 ||
       Math.abs(this.target.y - this.cur.y) > 0.05 ||
+      !!this.drag?.active ||
+      drifting;
+    const focusMoving =
       Math.abs(this.focusTarget.x - this.focus.x) > 0.1 ||
-      Math.abs(this.focusTarget.y - this.focus.y) > 0.1 ||
-      (this.cursorPos.on &&
-        (Math.abs(this.cursorPos.tx - this.cursorPos.x) > 0.1 ||
-          Math.abs(this.cursorPos.ty - this.cursorPos.y) > 0.1));
+      Math.abs(this.focusTarget.y - this.focus.y) > 0.1;
+    const cursorMoving =
+      this.cursorPos.on &&
+      (Math.abs(this.cursorPos.tx - this.cursorPos.x) > 0.1 ||
+        Math.abs(this.cursorPos.ty - this.cursorPos.y) > 0.1);
+    const moving = planeMoving || focusMoving || cursorMoving;
 
-    // Throttle loupe refresh — optical warp every frame was too expensive.
-    if ((moving || drifting || this.drag?.active) && now - this.loupeT > 80) {
-      this.loupeT = now;
+    // Loupe tracks plane + focus bloom; cursor jitter alone does not refresh it.
+    if (planeMoving || focusMoving) {
       window.dispatchEvent(new CustomEvent('preview-loupe:invalidate'));
     }
 

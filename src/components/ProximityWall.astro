@@ -167,7 +167,8 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     will-change: transform;
     background: rgb(26 26 26 / 0.05);
     cursor: pointer;
-    contain: layout paint;
+    /* no paint containment — captions sit just below the frame */
+    overflow: visible;
   }
 
   .wall:global(.is-dragging) .wall-layer :global(.wall-tile) {
@@ -188,21 +189,26 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     opacity: 1;
   }
 
-  /* Lighttable-style caption under each frame */
+  /* Photo captions — serif; counter-scale so proximity bloom doesn't fatten type */
   .wall-layer :global(.wall-cap) {
     position: absolute;
     left: 0;
-    right: 0;
-    top: calc(100% + 6px);
+    top: calc(100% + 7px);
     display: flex;
     justify-content: space-between;
-    gap: 10px;
-    font-size: 11px;
+    gap: 12px;
+    width: calc(100% * var(--wall-s, 1));
+    font-family: var(--font-serif);
+    font-size: 10px;
+    font-weight: 400;
+    font-style: normal;
     line-height: 1.3;
     letter-spacing: -0.02em;
-    color: var(--color-ink-soft);
+    color: var(--color-mute);
     white-space: nowrap;
     pointer-events: none;
+    transform: scale(calc(1 / var(--wall-s, 1)));
+    transform-origin: top left;
   }
 
   .wall-layer :global(.wall-cap-label) {
@@ -212,8 +218,8 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
 
   .wall-layer :global(.wall-cap-num) {
     flex: none;
-    color: var(--color-mute);
     font-variant-numeric: tabular-nums;
+    opacity: 0.75;
   }
 
   .wall-layer :global(.wall-tile.is-centre) {
@@ -234,9 +240,9 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     border-radius: 9px;
     background: var(--color-ink);
     color: #fff;
-    font-size: 12.5px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;

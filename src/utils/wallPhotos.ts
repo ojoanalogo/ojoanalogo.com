@@ -1,5 +1,4 @@
 import { getFeaturedPhotos } from '../data/featured';
-import { CONCEPT_PLACEHOLDERS, padWithPlaceholders } from '../data/concept';
 import { isRemoteSrc, type PhotoSource } from '../types/photos';
 import type { WallPhoto } from '../types/wall';
 import type { Album } from './albums';
@@ -47,7 +46,7 @@ export async function albumWallPhotos(album: Album): Promise<WallPhoto[]> {
  * frame, de-duplicated by URL. Featured frames inherit the album link when the
  * same file also lives in an album.
  */
-export async function homeWallPhotos(albums: Album[], min = 30): Promise<WallPhoto[]> {
+export async function homeWallPhotos(albums: Album[]): Promise<WallPhoto[]> {
   const albumPhotos = (await Promise.all(albums.map(albumWallPhotos))).flat();
   const byId = new Map(albumPhotos.map((p) => [p.id, p]));
 
@@ -60,11 +59,9 @@ export async function homeWallPhotos(albums: Album[], min = 30): Promise<WallPho
   );
 
   const seen = new Set<string>();
-  const unique = [...featured, ...albumPhotos].filter((p) => {
+  return [...featured, ...albumPhotos].filter((p) => {
     if (seen.has(p.id)) return false;
     seen.add(p.id);
     return true;
   });
-
-  return CONCEPT_PLACEHOLDERS ? padWithPlaceholders(unique, min, { seed: 'home' }) : unique;
 }

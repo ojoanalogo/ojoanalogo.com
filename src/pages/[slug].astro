@@ -1,7 +1,6 @@
 ---
 import { render } from 'astro:content';
 import ProximityWall from '../components/ProximityWall.astro';
-import { CONCEPT_PLACEHOLDERS, padWithPlaceholders } from '../data/concept';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { formatRollDate, getAlbums, type Album } from '../utils/albums';
 import { albumWallPhotos } from '../utils/wallPhotos';
@@ -24,24 +23,16 @@ interface Props {
 
 const { album, next } = Astro.props;
 const { Content } = await render(album.entry);
-const link = { title: album.title, href: album.href };
 
-const real = await albumWallPhotos(album);
-const photos = CONCEPT_PLACEHOLDERS
-  ? padWithPlaceholders(real, 12, { seed: album.slug, prefer: album.slug, album: link })
-  : real;
-
-const nextPhotos = next ? (await albumWallPhotos(next)).slice(0, 3) : [];
-const nextPreview = next && CONCEPT_PLACEHOLDERS
-  ? padWithPlaceholders(nextPhotos, 3, { seed: next.slug, prefer: next.slug })
-  : nextPhotos;
+const photos = await albumWallPhotos(album);
+const nextPreview = next ? (await albumWallPhotos(next)).slice(0, 3) : [];
 
 const rollDate = formatRollDate(album.date);
 const pad = (n: number) => String(n).padStart(2, '0');
 const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
 ---
 
-<BaseLayout title={album.title} description={album.description} active={album.slug} canvas>
+<BaseLayout title={album.title} description={album.description} active={album.slug} canvas loupe>
   <noscript>
     <style is:inline>
       html.is-canvas, html.is-canvas body { height: auto !important; overflow: auto !important; }
@@ -140,11 +131,6 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
                     {pad(i + 1)} / {pad(photos.length)}
                   </span>
                   <span>{photo.alt}</span>
-                  {photo.credit && (
-                    <a class="label-mono seq-credit" href={photo.credit.href} target="_blank" rel="noreferrer">
-                      {photo.credit.label}
-                    </a>
-                  )}
                 </figcaption>
               </figure>
             </li>
@@ -347,15 +333,19 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
 
   .album-card-title {
     margin-top: 6px;
+    font-family: var(--font-serif);
     font-size: 34px;
     font-weight: 600;
+    font-style: normal;
     line-height: 1;
     letter-spacing: -0.035em;
   }
 
   .album-card-desc {
     margin-top: 8px;
+    font-family: var(--font-serif);
     font-size: 14.5px;
+    font-style: normal;
     line-height: 1.4;
     color: var(--color-ink-soft);
   }
@@ -453,8 +443,10 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
   }
 
   .seq-title {
+    font-family: var(--font-serif);
     font-size: clamp(64px, 13vw, 200px);
     font-weight: 600;
+    font-style: normal;
     line-height: 0.86;
     letter-spacing: -0.032em;
     margin-left: -0.04em;
@@ -468,8 +460,9 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
 
   .seq-desc {
     font-family: var(--font-serif);
-    font-style: italic;
     font-size: clamp(24px, 2.6vw, 34px);
+    font-weight: 400;
+    font-style: normal;
     line-height: 1.15;
     letter-spacing: -0.01em;
   }
@@ -545,15 +538,6 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
   }
 
   .seq-item figcaption .label-mono:first-child {
-    color: var(--color-ink);
-  }
-
-  .seq-credit {
-    margin-left: auto;
-    color: var(--color-mute);
-  }
-
-  .seq-credit:hover {
     color: var(--color-ink);
   }
 

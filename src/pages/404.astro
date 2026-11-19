@@ -14,7 +14,7 @@ const photos = await homeWallPhotos(await getAlbums());
     <section class="nf-card">
       <p class="label-mono text-mute">Error 404 · Cuadro velado</p>
       <h1 class="nf-title">
-        Rollo no<br /><em>encontrado</em>
+        Rollo no<br /><span class="nf-mute">encontrado</span>
       </h1>
       <p class="nf-copy">La fotografía que buscas parece haberse perdido en el cuarto oscuro.</p>
       <a href="/" class="btn-ink">
@@ -61,8 +61,7 @@ const photos = await homeWallPhotos(await getAlbums());
     letter-spacing: -0.045em;
   }
 
-  .nf-title em {
-    font-family: var(--font-serif);
+  .nf-mute {
     font-weight: 400;
     letter-spacing: -0.02em;
     color: var(--color-mute);

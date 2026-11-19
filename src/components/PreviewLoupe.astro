@@ -1,43 +1,62 @@
 ---
 /**
- * Preview loupe easter egg — honest top-down disc (no fake perspective stretch).
- * Soft rubber ocular + PREVIEW, glass magnifier, semi-transparent plastic support.
- * True Apple-style volume needs WebGL; CSS tilt only elongates the silhouette.
+ * Preview loupe — top-down disc with rubber ocular + CSS-space optical glass.
+ * Zoom is always 2× for now; 5× dial/wheel stays behind ZOOM_5X_ENABLED.
  */
 ---
 
 <div
   class="ploupe"
   data-preview-loupe
-  role="img"
-  aria-label="Lupa Preview: arrástrala para ampliar"
+  role="group"
+  aria-label="Lupa Preview: arrastra para ampliar a 2×"
+  data-zoom-5x="off"
   style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
 >
   <div class="ploupe-shadow" aria-hidden="true"></div>
 
   <div class="ploupe-body">
-    <!-- Semi-transparent plastic support around -->
     <div class="ploupe-support" aria-hidden="true"></div>
     <div class="ploupe-support-sheen" aria-hidden="true"></div>
 
-    <!-- Magnifying glass -->
     <canvas class="ploupe-glass" data-ploupe-glass width="280" height="280"></canvas>
     <div class="ploupe-flare" aria-hidden="true"></div>
     <div class="ploupe-glass-rim" aria-hidden="true"></div>
 
-    <!-- Black rubber ocular; label sits in the ring (not clipped by the hole) -->
     <div class="ploupe-rubber" aria-hidden="true"></div>
     <svg class="ploupe-mark" viewBox="0 0 100 100" aria-hidden="true">
       <defs>
-        <!-- Mid-ring arc (r≈40): hole ends ~29, outer edge 50 -->
         <path id="ploupe-arc" d="M 16,76 A 40,40 0 0 0 84,76" fill="none"></path>
       </defs>
       <text>
-        <textPath href="#ploupe-arc" xlink:href="#ploupe-arc" startOffset="50%" text-anchor="middle">
-          PREVIEW 10×
+        <textPath
+          href="#ploupe-arc"
+          xlink:href="#ploupe-arc"
+          startOffset="50%"
+          text-anchor="middle"
+          data-ploupe-label
+        >
+          PREVIEW 2×
         </textPath>
       </text>
     </svg>
+
+    <!-- 5× mode: hit target over PREVIEW engraving (hidden while disabled) -->
+    <button
+      type="button"
+      class="ploupe-preview-hit"
+      data-ploupe-preview-hit
+      aria-label="Mostrar selector de aumento"
+      aria-controls="ploupe-dial"
+      hidden
+    ></button>
+  </div>
+
+  <!-- 5× mode: zoom dial (hidden while disabled) -->
+  <div class="ploupe-dial" id="ploupe-dial" role="group" aria-label="Aumento" data-ploupe-dial hidden>
+    <span class="ploupe-dial-thumb" data-zoom-thumb aria-hidden="true"></span>
+    <button type="button" class="ploupe-dial-btn" data-zoom-set="2" aria-pressed="true">2×</button>
+    <button type="button" class="ploupe-dial-btn" data-zoom-set="5" aria-pressed="false">5×</button>
   </div>
 </div>
 
@@ -45,48 +64,178 @@
   function initPreviewLoupe(root: HTMLElement) {
     const canvas = root.querySelector<HTMLCanvasElement>("[data-ploupe-glass]")!;
     const ctx = canvas.getContext("2d", { alpha: true })!;
-    const ZOOM = 2.25;
+    const labelEl = root.querySelector<SVGTextPathElement>("[data-ploupe-label]")!;
+    const dialBtns = [...root.querySelectorAll<HTMLButtonElement>("[data-zoom-set]")];
 
     const plate = document.createElement("canvas");
     const plateCtx = plate.getContext("2d", { willReadFrequently: true })!;
     const blit = document.createElement("canvas");
     const blitCtx = blit.getContext("2d")!;
 
+    /** Flip to true to restore 5× + dial / wheel switching. */
+    const ZOOM_5X_ENABLED = false;
+    type ZoomMode = 2 | 5;
+    const WARP = 128;
+    const IOR = 0.24;
+    /** Glass is inset 22% → 56% of the loupe disc (.ploupe-glass). */
+    const GLASS_FRAC = 0.56;
+
+    let zoom: ZoomMode = 2;
+    let zoomVis = 2;
+    let zoomRaf = 0;
     let sizeCss = 168;
     let dragging = false;
     let dirty = true;
-    let quality = true;
-    let warp = 0;
+    let warpSize = 0;
     let outBuf: ImageData | null = null;
     let lastKey = "";
     let raf = 0;
-    let settleTimer = 0;
     let vw = window.innerWidth;
     let vh = window.innerHeight;
-    let lastInvalidate = 0;
     let grabDX = 0;
     let grabDY = 0;
+    let inLightbox = false;
+    let glideTimer = 0;
+    const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const fallBack =
       getComputedStyle(document.documentElement).getPropertyValue("--color-paper").trim() ||
       getComputedStyle(document.body).backgroundColor ||
       "#f5f5f5";
 
+    function syncZoomUi() {
+      if (labelEl) labelEl.textContent = `PREVIEW ${zoom}×`;
+      root.dataset.zoom = String(zoom);
+      for (const btn of dialBtns) {
+        btn.setAttribute("aria-pressed", String(btn.dataset.zoomSet === String(zoom)));
+      }
+    }
+
+    function setZoom(next: ZoomMode) {
+      if (!ZOOM_5X_ENABLED && next !== 2) next = 2;
+      if (next === zoom) return;
+      zoom = next;
+      syncZoomUi();
+      if (!zoomRaf) tickZoom();
+    }
+
+    function tickZoom() {
+      zoomRaf = requestAnimationFrame(() => {
+        const diff = zoom - zoomVis;
+        if (Math.abs(diff) < 0.02) {
+          zoomVis = zoom;
+          zoomRaf = 0;
+        } else {
+          zoomVis += diff * 0.38;
+          tickZoom();
+        }
+        dirty = true;
+        lastKey = "";
+        schedule();
+      });
+    }
+
     function centre() {
+      const h = homePos();
       return {
-        x: parseFloat(root.style.getPropertyValue("--pl-x")) || vw * 0.78,
-        y: parseFloat(root.style.getPropertyValue("--pl-y")) || vh * 0.4,
+        x: parseFloat(root.style.getPropertyValue("--pl-x")) || h.x,
+        y: parseFloat(root.style.getPropertyValue("--pl-y")) || h.y,
       };
     }
 
-    function place(x: number, y: number) {
-      const pad = sizeCss * 0.52;
-      const nx = Math.max(pad, Math.min(vw - pad, x));
-      const ny = Math.max(pad, Math.min(vh - pad, y));
-      root.style.setProperty("--pl-x", `${nx}px`);
-      root.style.setProperty("--pl-y", `${ny}px`);
+    /** Rest above the “Arrastra para explorar” HUD chip when present. */
+    function homePos() {
+      const hud = document.querySelector("[data-wall-coords]")?.closest(".chip");
+      if (hud) {
+        const r = hud.getBoundingClientRect();
+        // During ClientRouter swaps the chip can briefly report 0×0 → (0,0).
+        // Never treat that as home or we clamp into the top-left corner.
+        if (r.width > 40 && r.height > 20 && r.bottom > 40 && r.right > 40) {
+          return {
+            x: r.left + r.width / 2,
+            y: r.top - sizeCss * 0.55 - 40,
+          };
+        }
+      }
+      return { x: vw - 100, y: vh - 22 - sizeCss * 0.9 - 40 };
+    }
+
+    /** Snap/glide to home after layout is trustworthy (esp. post view-transition). */
+    function goHome(glide = false) {
+      syncSize();
+      const apply = () => {
+        const h = homePos();
+        place(h.x, h.y, { glide });
+      };
+      apply();
+      requestAnimationFrame(() => requestAnimationFrame(apply));
+      window.setTimeout(apply, 120);
+    }
+
+    function place(x: number, y: number, opts: { clamp?: boolean; glide?: boolean } = {}) {
+      const { clamp = true, glide = false } = opts;
+      if (clamp) {
+        const pad = sizeCss * 0.5;
+        x = Math.max(pad, Math.min(vw - pad, x));
+        y = Math.max(pad, Math.min(vh - pad, y));
+      }
+      if (glide && !reducedMotion()) {
+        root.classList.add("is-gliding");
+        window.clearTimeout(glideTimer);
+        glideTimer = window.setTimeout(() => root.classList.remove("is-gliding"), 560);
+      } else {
+        root.classList.remove("is-gliding");
+      }
+      root.style.setProperty("--pl-x", `${x}px`);
+      root.style.setProperty("--pl-y", `${y}px`);
       dirty = true;
       schedule();
+    }
+
+    /**
+     * Sit just outside the fullscreen lightbox frame — bottom-right corner,
+     * nudged further right so the glass is not on top of the photo.
+     * Uses the layout rect from lightbox (FLIP-safe), not getBoundingClientRect.
+     */
+    function parkOnLightbox(rect?: { left: number; top: number; width: number; height: number }) {
+      inLightbox = true;
+      const r =
+        rect && rect.width > 48
+          ? rect
+          : (() => {
+              // Fallback: read target layout from inline styles (ignores FLIP transform).
+              const img = document.querySelector<HTMLElement>("[data-lb-img]");
+              if (!img) return null;
+              const left = parseFloat(img.style.left);
+              const top = parseFloat(img.style.top);
+              const width = parseFloat(img.style.width);
+              const height = parseFloat(img.style.height);
+              if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
+              return { left, top, width, height };
+            })();
+
+      if (r) {
+        const right = r.left + r.width;
+        const bottom = r.top + r.height;
+        const roomRight = vw - right;
+        if (roomRight > sizeCss * 0.5) {
+          // Outside the frame, just past the bottom-right corner.
+          place(right + sizeCss * 0.4, bottom - sizeCss * 0.18, { glide: true });
+        } else {
+          // Full-bleed width: hang under the bottom-right corner instead.
+          place(right - sizeCss * 0.18, bottom + sizeCss * 0.4, { glide: true });
+        }
+      } else {
+        place(vw - sizeCss * 0.45, vh * 0.62, { glide: true });
+      }
+    }
+
+    /** Leave the preview — glide straight back to the wall resting spot. */
+    function leaveLightbox() {
+      if (!inLightbox) return;
+      inLightbox = false;
+      const h = homePos();
+      place(h.x, h.y, { glide: !reducedMotion() });
     }
 
     function syncSize() {
@@ -95,13 +244,18 @@
       sizeCss = Math.min(180, Math.max(140, Math.round(vw * 0.14)));
       root.style.setProperty("--pl-size", `${sizeCss}px`);
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const px = Math.round(sizeCss * 0.52 * dpr);
+      const px = Math.round(sizeCss * GLASS_FRAC * dpr);
       if (canvas.width !== px) {
         canvas.width = px;
         canvas.height = px;
-        warp = 0;
+        warpSize = 0;
         dirty = true;
       }
+    }
+
+    /** CSS diameter of the glass — optical zoom lives in CSS px (DPR / page-zoom safe). */
+    function glassCss() {
+      return canvas.clientWidth || sizeCss * GLASS_FRAC;
     }
 
     function imgUnder(cx: number, cy: number): HTMLImageElement | null {
@@ -112,77 +266,43 @@
         if (el instanceof HTMLImageElement && el.naturalWidth > 0) return el;
         if (el instanceof HTMLElement) {
           const img = el.querySelector("img");
-          if (img && img.naturalWidth > 0) return img;
+          if (img?.naturalWidth) return img;
         }
       }
       return null;
     }
 
-    function drawFast(img: HTMLImageElement | null, cx: number, cy: number, size: number) {
-      const R = size / 2;
-      ctx.clearRect(0, 0, size, size);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(R, R, R - 0.5, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.fillStyle = fallBack;
-      ctx.fillRect(0, 0, size, size);
-      if (img) {
-        const rect = img.getBoundingClientRect();
-        if (rect.width > 1 && rect.height > 1) {
-          const dpr = window.devicePixelRatio || 1;
-          const srcCss = size / ZOOM / dpr;
-          const scaleX = img.naturalWidth / rect.width;
-          const scaleY = img.naturalHeight / rect.height;
-          const srcW = srcCss * scaleX;
-          const srcH = srcCss * scaleY;
-          try {
-            ctx.drawImage(
-              img,
-              (cx - rect.left) * scaleX - srcW / 2,
-              (cy - rect.top) * scaleY - srcH / 2,
-              srcW,
-              srcH,
-              0,
-              0,
-              size,
-              size,
-            );
-          } catch {
-            /* ignore */
-          }
-        }
-      }
-      ctx.restore();
+    function ensureWarpBuffers(wSize: number) {
+      if (warpSize === wSize) return;
+      warpSize = wSize;
+      plate.width = Math.ceil(wSize * 1.12);
+      plate.height = plate.width;
+      blit.width = wSize;
+      blit.height = wSize;
+      outBuf = ctx.createImageData(wSize, wSize);
     }
 
-    function drawQuality(img: HTMLImageElement | null, cx: number, cy: number, size: number) {
+    function draw(img: HTMLImageElement | null, cx: number, cy: number) {
+      const size = canvas.width;
       const R = size / 2;
-      const wSize = Math.min(size, 160);
-      if (warp !== wSize) {
-        warp = wSize;
-        plate.width = Math.ceil(wSize * 1.12);
-        plate.height = plate.width;
-        blit.width = wSize;
-        blit.height = wSize;
-        outBuf = ctx.createImageData(wSize, wSize);
-      }
-
+      ensureWarpBuffers(WARP);
+      const wSize = WARP;
       const plateN = plate.width;
       const pR = plateN / 2;
       const wR = wSize / 2;
+
       plateCtx.fillStyle = fallBack;
       plateCtx.fillRect(0, 0, plateN, plateN);
 
       if (img) {
         const rect = img.getBoundingClientRect();
         if (rect.width > 1 && rect.height > 1) {
-          const dpr = window.devicePixelRatio || 1;
-          const srcCss = wSize / ZOOM / dpr;
+          // True N× in CSS space; 1.12 pad feeds the refraction plate only.
+          const srcCss = (glassCss() / zoomVis) * 1.12;
           const scaleX = img.naturalWidth / rect.width;
           const scaleY = img.naturalHeight / rect.height;
-          const srcW = srcCss * scaleX * 1.12;
-          const srcH = srcCss * scaleY * 1.12;
+          const srcW = srcCss * scaleX;
+          const srcH = srcCss * scaleY;
           try {
             plateCtx.drawImage(
               img,
@@ -196,15 +316,13 @@
               plateN,
             );
           } catch {
-            /* ignore */
+            /* tainted / unloaded */
           }
         }
       }
 
       const src = plateCtx.getImageData(0, 0, plateN, plateN).data;
-      const out = outBuf!;
-      const d = out.data;
-      const IOR = 0.24;
+      const d = outBuf!.data;
 
       for (let y = 0; y < wSize; y++) {
         for (let x = 0; x < wSize; x++) {
@@ -242,7 +360,7 @@
       ctx.beginPath();
       ctx.arc(R, R, R - 0.5, 0, Math.PI * 2);
       ctx.clip();
-      blitCtx.putImageData(out, 0, 0);
+      blitCtx.putImageData(outBuf!, 0, 0);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
       ctx.drawImage(blit, 0, 0, size, size);
@@ -265,7 +383,8 @@
       const img = imgUnder(cx, cy);
       const rect = img?.getBoundingClientRect();
       const key = [
-        quality ? "q" : "f",
+        zoomVis.toFixed(2),
+        glassCss() | 0,
         cx | 0,
         cy | 0,
         img?.currentSrc ?? "",
@@ -278,10 +397,7 @@
       }
       lastKey = key;
       dirty = false;
-
-      const size = canvas.width;
-      if (quality || dragging) drawQuality(img, cx, cy, size);
-      else drawFast(img, cx, cy, size);
+      draw(img, cx, cy);
     }
 
     function schedule() {
@@ -293,35 +409,29 @@
     }
 
     function onInvalidate() {
-      const now = performance.now();
-      quality = false;
       dirty = true;
-      if (now - lastInvalidate < 50) return;
-      lastInvalidate = now;
-      schedule();
-      window.clearTimeout(settleTimer);
-      settleTimer = window.setTimeout(() => {
-        quality = true;
-        dirty = true;
-        lastKey = "";
-        schedule();
-      }, 140);
+      lastKey = "";
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+      paint();
     }
 
     root.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
+      if ((e.target as HTMLElement).closest(".ploupe-dial, .ploupe-preview-hit")) return;
       e.preventDefault();
       e.stopPropagation();
       const c = centre();
       grabDX = e.clientX - c.x;
       grabDY = e.clientY - c.y;
       dragging = true;
-      quality = true;
       dirty = true;
       root.classList.add("is-held");
+      root.classList.remove("is-gliding");
       root.setPointerCapture(e.pointerId);
       schedule();
-      window.dispatchEvent(new CustomEvent("preview-loupe:hold"));
     });
     root.addEventListener("pointermove", (e) => {
       if (!dragging) return;
@@ -332,7 +442,6 @@
       if (!dragging) return;
       dragging = false;
       root.classList.remove("is-held");
-      quality = true;
       dirty = true;
       schedule();
       try {
@@ -340,29 +449,96 @@
       } catch {
         /* ok */
       }
-      window.dispatchEvent(new CustomEvent("preview-loupe:release"));
     };
     root.addEventListener("pointerup", end);
     root.addEventListener("pointercancel", end);
 
-    window.addEventListener("resize", () => {
+    // ——— 5× mode (dormant while ZOOM_5X_ENABLED is false) ———
+    root.addEventListener(
+      "wheel",
+      (e) => {
+        if (!ZOOM_5X_ENABLED) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.deltaY < 0 && zoom !== 5) setZoom(5);
+        else if (e.deltaY > 0 && zoom !== 2) setZoom(2);
+      },
+      { passive: false },
+    );
+    root.addEventListener("click", (e) => {
+      if (!ZOOM_5X_ENABLED) return;
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-zoom-set]");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setZoom(btn.dataset.zoomSet === "2" ? 2 : 5);
+    });
+
+    syncZoomUi();
+    if (ZOOM_5X_ENABLED) {
+      root.querySelector<HTMLElement>("[data-ploupe-preview-hit]")?.removeAttribute("hidden");
+      root.querySelector<HTMLElement>("[data-ploupe-dial]")?.removeAttribute("hidden");
+      root.dataset.zoom5x = "on";
+    }
+
+    const onViewport = () => {
       syncSize();
       const c = centre();
       place(c.x, c.y);
-    });
+    };
+    window.addEventListener("resize", onViewport);
+    window.visualViewport?.addEventListener("resize", onViewport);
+    window.visualViewport?.addEventListener("scroll", onInvalidate);
     window.addEventListener("scroll", onInvalidate, true);
     window.addEventListener("preview-loupe:invalidate", onInvalidate);
+    window.addEventListener(
+      "preview-loupe:lightbox",
+      ((e: CustomEvent<{ open: boolean; rect?: { left: number; top: number; width: number; height: number } }>) => {
+        if (e.detail?.open) parkOnLightbox(e.detail.rect);
+        else leaveLightbox();
+      }) as EventListener,
+    );
+    window.addEventListener(
+      "preview-loupe:corner",
+      ((e: CustomEvent<{ corner?: string }>) => {
+        if (e.detail?.corner !== "tl") return;
+        inLightbox = false;
+        syncSize();
+        // Top-left of the viewport, clear of the centered nav pill.
+        const x = 20 + sizeCss * 0.5;
+        const y = 20 + sizeCss * 0.5;
+        place(x, y, { glide: true });
+        onInvalidate();
+      }) as EventListener,
+    );
     window.addEventListener("lt:view", () => {
       dirty = true;
       schedule();
     });
 
-    syncSize();
-    place(vw * 0.78, vh * 0.4);
+    // Soft nav / view transitions: re-home once the new page finishes swapping.
+    const onPageLoad = () => {
+      if (!document.contains(root)) {
+        window.removeEventListener("astro:page-load", onPageLoad);
+        return;
+      }
+      inLightbox = false;
+      goHome(false);
+    };
+    window.addEventListener("astro:page-load", onPageLoad);
+
+    goHome(false);
   }
 
-  const el = document.querySelector<HTMLElement>("[data-preview-loupe]");
-  if (el) initPreviewLoupe(el);
+  const booted = new WeakSet<HTMLElement>();
+  function boot() {
+    const el = document.querySelector<HTMLElement>("[data-preview-loupe]");
+    if (!el || booted.has(el)) return;
+    booted.add(el);
+    initPreviewLoupe(el);
+  }
+  boot();
+  document.addEventListener("astro:page-load", boot);
 </script>
 
 <style>
@@ -371,7 +547,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 80;
+    z-index: 90;
     width: var(--pl-size);
     height: var(--pl-size);
     transform: translate3d(calc(var(--pl-x) - 50%), calc(var(--pl-y) - 50%), 0);
@@ -381,6 +557,13 @@
     -webkit-user-select: none;
     filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.22)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
     transition:
+      filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.35s ease;
+  }
+
+  .ploupe:global(.is-gliding) {
+    transition:
+      transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
       filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.35s ease;
   }
@@ -404,7 +587,6 @@
     border-radius: 50%;
   }
 
-  /* Plastic support — soft semi-transparent housing */
   .ploupe-support {
     position: absolute;
     inset: 0;
@@ -469,7 +651,6 @@
     opacity: 0.85;
   }
 
-  /* Black rubber ocular */
   .ploupe-rubber {
     position: absolute;
     inset: 7%;
@@ -485,7 +666,6 @@
 
   .ploupe-mark {
     position: absolute;
-    /* Match rubber inset so the arc lines up with the ring */
     inset: 7%;
     width: auto;
     height: auto;
@@ -494,11 +674,103 @@
   }
 
   .ploupe-mark text {
-    fill: #8a8a8a;
+    fill: #9a9a9a;
     font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
-    font-size: 4.6px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
+    font-size: 4.4px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+  }
+
+  /* ——— 5× mode UI (dormant) ——— */
+  .ploupe-preview-hit {
+    position: absolute;
+    left: 18%;
+    right: 18%;
+    bottom: 6%;
+    height: 24%;
+    z-index: 4;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50% / 60%;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ploupe-dial {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 10px);
+    transform: translateX(-50%) translateY(4px);
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.82);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 6px 16px rgb(0 0 0 / 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:hover) .ploupe-dial,
+  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:focus-visible) .ploupe-dial,
+  .ploupe[data-zoom-5x="on"] .ploupe-dial:hover,
+  .ploupe[data-zoom-5x="on"] .ploupe-dial:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (hover: none) {
+    .ploupe[data-zoom-5x="on"] .ploupe-dial:not([hidden]) {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+
+  .ploupe-dial-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 4px);
+    height: calc(100% - 6px);
+    border-radius: 999px;
+    background: var(--color-ink, #1a1a1a);
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .ploupe[data-zoom="5"] .ploupe-dial-thumb {
+    transform: translateX(calc(100% + 2px));
+  }
+
+  .ploupe-dial-btn {
+    position: relative;
+    z-index: 1;
+    min-width: 36px;
+    height: 26px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-mute, #8a8a8a);
+    font: 400 11px/1 var(--font-sans), "Helvetica Neue", sans-serif;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: color 0.28s ease;
+  }
+
+  .ploupe-dial-btn[aria-pressed="true"] {
+    color: #fff;
   }
 
   :global(html[data-view="list"]) .ploupe {
@@ -513,7 +785,12 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .ploupe {
+    .ploupe,
+    .ploupe:global(.is-gliding) {
+      transition: none;
+    }
+
+    .ploupe-dial-thumb {
       transition: none;
     }
   }

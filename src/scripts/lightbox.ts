@@ -21,13 +21,19 @@ interface Els {
   title: HTMLElement;
   alt: HTMLElement;
   album: HTMLAnchorElement;
-  credit: HTMLAnchorElement;
   prev: HTMLButtonElement;
   next: HTMLButtonElement;
   close: HTMLButtonElement;
 }
 
 const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+type LoupeRect = { left: number; top: number; width: number; height: number };
+
+/** Park the loupe using the lightbox *layout* rect (not FLIP visual bounds). */
+function notifyLoupe(open: boolean, rect?: LoupeRect) {
+  window.dispatchEvent(new CustomEvent('preview-loupe:lightbox', { detail: { open, rect } }));
+}
 
 let state: {
   photos: WallPhoto[];
@@ -53,7 +59,6 @@ function query(): Els | null {
     title: $('[data-lb-title]'),
     alt: $('[data-lb-alt]'),
     album: $('[data-lb-album]'),
-    credit: $('[data-lb-credit]'),
     prev: $('[data-lb-prev]'),
     next: $('[data-lb-next]'),
     close: $('[data-lb-close-btn]'),
@@ -93,7 +98,7 @@ function place(els: Els, photo: WallPhoto) {
 function caption(els: Els, photos: WallPhoto[], index: number) {
   const photo = photos[index];
   els.count.textContent = `${pad(index + 1)} / ${pad(photos.length)}`;
-  els.title.textContent = photo.album?.title ?? (photo.credit ? 'Muestra' : 'Archivo');
+  els.title.textContent = photo.album?.title ?? 'Archivo';
   els.alt.textContent = photo.alt;
   els.img.alt = photo.alt;
 
@@ -103,11 +108,6 @@ function caption(els: Els, photos: WallPhoto[], index: number) {
   if (photo.album) {
     els.album.href = photo.album.href;
     els.album.querySelector('span')!.textContent = `Ver ${photo.album.title}`;
-  }
-  els.credit.hidden = !photo.credit;
-  if (photo.credit) {
-    els.credit.href = photo.credit.href;
-    els.credit.textContent = photo.credit.label;
   }
   const many = photos.length > 1;
   els.prev.hidden = !many;
@@ -140,6 +140,7 @@ function upgrade(photo: WallPhoto, index: number) {
             { duration: 450, easing: EASE },
           );
         }
+        notifyLoupe(true, after);
       }
       setSrc(state.els, photo.full);
     })
@@ -194,6 +195,8 @@ function show(index: number, opts: OpenOptions = {}) {
   }
   upgrade(photo, index);
   preloadNeighbours();
+  // Pass layout rect — getBoundingClientRect would still be on the wall tile during FLIP.
+  notifyLoupe(true, r);
 }
 
 /** Resolve when an animation ends — or is cancelled — without throwing. */
@@ -264,6 +267,7 @@ export function closeLightbox(immediate = false) {
   ac.abort();
   els.root.classList.remove('is-open');
   document.documentElement.classList.remove('lb-open');
+  notifyLoupe(false);
 
   const finish = () => {
     if (state) return; // re-opened while the exit animation was running

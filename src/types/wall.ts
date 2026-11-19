@@ -17,6 +17,4 @@ export interface WallPhoto {
   sized: boolean;
   alt: string;
   album?: { title: string; href: string };
-  /** Attribution for concept placeholders. */
-  credit?: { label: string; href: string };
 }

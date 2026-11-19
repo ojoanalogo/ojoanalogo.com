@@ -1,5 +1,5 @@
 ---
-import Mark from '../components/Mark.astro';
+import Hint from '../components/Hint.astro';
 import ProximityWall from '../components/ProximityWall.astro';
 import site from '../data/site.json';
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -10,8 +10,8 @@ const albums = await getAlbums();
 const photos = await homeWallPhotos(albums);
 ---
 
-<BaseLayout active="home" canvas>
-  <h1 class="sr-only">{site.title} — ojoanalogo, fotografía analógica</h1>
+<BaseLayout active="home" canvas loupe>
+  <h1 class="sr-only">{site.title} — fotografía analógica</h1>
 
   {
     photos.length > 0 ? (
@@ -31,35 +31,30 @@ const photos = await homeWallPhotos(albums);
     )
   }
 
-  <div class="corner corner--left">
-    <a href="/about" class="chip">
-      <Mark size={18} />
-      <span>{site.title}</span>
-      <span class="corner-sub">· fotografía analógica</span>
-    </a>
-  </div>
-
   {
     photos.length > 0 && (
-      <div class="corner corner--right" aria-hidden="true">
-        <div class="chip hud">
-          <span class="hud-hint">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3m-3 15-3-3m3 3 3-3M3 12l3-3m-3 3 3 3m15-3-3-3m3 3-3 3"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            Arrastra para explorar
-          </span>
-          <span class="hud-coords" data-wall-coords>
-            x +0000 · y +0000
-          </span>
+      <>
+        <div class="corner corner--right" aria-hidden="true">
+          <div class="chip hud">
+            <span class="hud-hint">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3m-3 15-3-3m3 3 3-3M3 12l3-3m-3 3 3 3m15-3-3-3m3 3-3 3"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Arrastra para explorar
+            </span>
+            <span class="hud-coords" data-wall-coords>
+              x +0000 · y +0000
+            </span>
+          </div>
         </div>
-      </div>
+        <Hint label="arrástrame" anchor="[data-preview-loupe]" placement="top" />
+      </>
     )
   }
 </BaseLayout>
@@ -76,17 +71,8 @@ const photos = await homeWallPhotos(albums);
     pointer-events: auto;
   }
 
-  .corner--left {
-    left: 22px;
-  }
-
   .corner--right {
     right: 22px;
-  }
-
-  .corner-sub {
-    font-weight: 500;
-    color: var(--color-mute);
   }
 
   .hud {
@@ -145,15 +131,7 @@ const photos = await homeWallPhotos(albums);
       bottom: 14px;
     }
 
-    .corner--left {
-      left: 14px;
-    }
-
     .corner--right {
-      display: none;
-    }
-
-    .corner-sub {
       display: none;
     }
   }

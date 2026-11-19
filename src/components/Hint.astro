@@ -1,0 +1,186 @@
+---
+/**
+ * Floating hint glued above an anchor.
+ * Fades in place — no travel animation.
+ */
+export interface Props {
+  label: string;
+  anchor: string;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
+  class?: string;
+}
+
+const { label, anchor, placement = 'top', class: className } = Astro.props;
+---
+
+<div
+  class:list={['hint', className]}
+  data-hint
+  data-hint-for={anchor}
+  data-hint-placement={placement}
+  hidden
+  role="status"
+>
+  <span class="hint-label">{label}</span>
+  <span class="hint-arrow" aria-hidden="true"></span>
+</div>
+
+<script>
+  function initHint(el: HTMLElement) {
+    if (el.dataset.hintReady === '1') return;
+    el.dataset.hintReady = '1';
+
+    const sel = el.dataset.hintFor;
+    const placement = el.dataset.hintPlacement || 'top';
+    if (!sel) return;
+
+    const anchor = document.querySelector<HTMLElement>(sel);
+    if (!anchor) return;
+
+    const gap = 10;
+    const place = () => {
+      const r = anchor.getBoundingClientRect();
+      if (r.width < 2 && r.height < 2) return;
+      let x = r.left + r.width / 2;
+      let y = r.top - gap;
+      let tx = '-50%';
+      let ty = '-100%';
+      if (placement === 'bottom') {
+        y = r.bottom + gap;
+        ty = '0';
+      } else if (placement === 'left') {
+        x = r.left - gap;
+        y = r.top + r.height / 2;
+        tx = '-100%';
+        ty = '-50%';
+      } else if (placement === 'right') {
+        x = r.right + gap;
+        y = r.top + r.height / 2;
+        tx = '0';
+        ty = '-50%';
+      }
+      // Position via left/top so opacity fade never slides the tip.
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      el.style.transform = `translate(${tx}, ${ty})`;
+    };
+
+    let dismissed = false;
+    let raf = 0;
+    const stopFollow = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    };
+
+    const follow = () => {
+      place();
+      if (!dismissed) raf = requestAnimationFrame(follow);
+    };
+
+    const dismiss = () => {
+      if (dismissed) return;
+      dismissed = true;
+      stopFollow();
+      el.classList.remove('is-on');
+      window.setTimeout(() => {
+        el.hidden = true;
+      }, 280);
+      window.removeEventListener('resize', place);
+    };
+
+    const show = () => {
+      place();
+      el.hidden = false;
+      // Next frame: already at the loupe, then fade in.
+      requestAnimationFrame(() => {
+        place();
+        el.classList.add('is-on');
+        follow();
+      });
+      window.setTimeout(dismiss, 2500);
+    };
+
+    window.setTimeout(show, 500);
+    window.addEventListener('resize', place);
+    anchor.addEventListener('pointerdown', dismiss, { once: true });
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Escape') dismiss();
+      },
+      { once: true },
+    );
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll<HTMLElement>('[data-hint]').forEach(initHint);
+  });
+</script>
+
+<style>
+  .hint {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 95;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.28s ease;
+  }
+
+  .hint:global(.is-on) {
+    opacity: 1;
+  }
+
+  .hint-label {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: var(--color-ink, #1a1a1a);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.08),
+      0 8px 20px rgb(0 0 0 / 0.12);
+  }
+
+  .hint-arrow {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+    background: var(--color-ink, #1a1a1a);
+    transform: rotate(45deg);
+  }
+
+  .hint[data-hint-placement='bottom'] .hint-arrow {
+    top: 0;
+    margin-top: -4px;
+  }
+
+  .hint[data-hint-placement='left'] .hint-arrow {
+    left: 100%;
+    top: 50%;
+    margin-left: -4px;
+    margin-top: -4px;
+  }
+
+  .hint[data-hint-placement='right'] .hint-arrow {
+    left: 0;
+    top: 50%;
+    margin-left: -4px;
+    margin-top: -4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hint {
+      transition: none;
+    }
+  }
+</style>

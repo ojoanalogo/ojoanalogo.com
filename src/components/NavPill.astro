@@ -5,9 +5,11 @@ import Mark from './Mark.astro';
 export interface Props {
   /** 'home' | 'about' | album slug */
   active?: string;
+  /** Show the mark control that parks the Preview loupe */
+  loupe?: boolean;
 }
 
-const { active } = Astro.props;
+const { active, loupe = false } = Astro.props;
 const albums = await getAlbums();
 const current = (id: string) => (active === id ? 'page' : undefined);
 
@@ -18,10 +20,25 @@ const nextIndex = () => i++;
 <header class="pill-wrap" data-pill-root>
   <div class="pill" data-pill data-open="false">
     <div class="pill-bar">
-      <a href="/" class="pill-brand" aria-label="ojoanalogo — inicio">
-        <Mark class="pill-mark" size={18} />
-        <span>ojoanalogo</span>
-      </a>
+      <div class="pill-brand">
+        {
+          loupe ? (
+            <button
+              type="button"
+              class="pill-mark-btn"
+              data-loupe-corner
+              aria-label="Mover lupa a la esquina"
+            >
+              <Mark class="pill-mark" size={18} />
+            </button>
+          ) : (
+            <a href="/" class="pill-mark-link" aria-label="Alfonso Reyes — inicio">
+              <Mark class="pill-mark" size={18} />
+            </a>
+          )
+        }
+        <a href="/" aria-label="Alfonso Reyes — inicio">alfonso reyes</a>
+      </div>
       <button
         type="button"
         class="pill-burger"
@@ -127,6 +144,23 @@ const nextIndex = () => i++;
   });
 
   document.addEventListener('astro:before-preparation', () => setOpen(false));
+
+  function bindLoupeCorner() {
+    document.querySelectorAll<HTMLButtonElement>('[data-loupe-corner]').forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!document.querySelector('[data-preview-loupe]')) return;
+        window.dispatchEvent(
+          new CustomEvent('preview-loupe:corner', { detail: { corner: 'tl' } }),
+        );
+      });
+    });
+  }
+  bindLoupeCorner();
+  document.addEventListener('astro:page-load', bindLoupeCorner);
 </script>
 
 <style>
@@ -141,7 +175,7 @@ const nextIndex = () => i++;
 
   .pill {
     pointer-events: auto;
-    width: 250px;
+    width: 280px;
     max-width: calc(100vw - 24px);
     border-radius: 16px;
     background: var(--color-ink);
@@ -173,10 +207,23 @@ const nextIndex = () => i++;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
     letter-spacing: -0.015em;
     line-height: 1;
+  }
+
+  .pill-mark-btn,
+  .pill-mark-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
   }
 
   .pill-brand :global(.pill-mark) {
@@ -185,8 +232,13 @@ const nextIndex = () => i++;
     transition: transform 0.6s var(--ease-folio);
   }
 
-  .pill-brand:hover :global(.pill-mark) {
+  .pill-mark-btn:hover :global(.pill-mark),
+  .pill-mark-link:hover :global(.pill-mark) {
     transform: scaleY(0.25);
+  }
+
+  .pill-brand > a {
+    color: inherit;
   }
 
   .pill-burger {
@@ -296,7 +348,7 @@ const nextIndex = () => i++;
     gap: 12px;
     padding: 5px 4px;
     font-size: 24px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: -0.028em;
     line-height: 1.15;
     color: rgb(255 255 255 / 0.78);

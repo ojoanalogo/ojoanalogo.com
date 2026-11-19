@@ -10,8 +10,7 @@ const year = new Date().getFullYear();
   <div class="site-foot-inner">
     <a href="/" class="site-foot-brand">
       <Mark size={20} />
-      <span>ojoanalogo</span>
-      <span class="site-foot-by">— {site.title}</span>
+      <span>{site.title}</span>
     </a>
     <div class="site-foot-links">
       <a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
@@ -19,7 +18,7 @@ const year = new Date().getFullYear();
         <IconInstagram class="w-3.5 h-3.5" />
         Instagram
       </a>
-      <span class="label-mono text-mute">© {year} · hecho en película</span>
+      <span class="label-mono text-mute">© {year}</span>
     </div>
   </div>
 </footer>
@@ -45,14 +44,9 @@ const year = new Date().getFullYear();
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-  }
-
-  .site-foot-by {
+    font-size: 14px;
     font-weight: 400;
-    color: var(--color-mute);
+    letter-spacing: -0.015em;
   }
 
   .site-foot-links {
