@@ -1,29 +1,166 @@
 ---
-import CarouselGallery from "../components/CarouselGallery.astro";
-import { getFeaturedPhotos } from "../data/featured";
-import BaseLayout from "../layouts/BaseLayout.astro";
+import Mark from '../components/Mark.astro';
+import ProximityWall from '../components/ProximityWall.astro';
+import site from '../data/site.json';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAlbums } from '../utils/albums';
+import { homeWallPhotos } from '../utils/wallPhotos';
 
-const photos = getFeaturedPhotos();
+const albums = await getAlbums();
+const photos = await homeWallPhotos(albums);
 ---
 
-<BaseLayout sideBarActiveItemID="home" compactFooter={photos.length > 0}>
-  <div class="flex-1 flex flex-col min-h-0 py-3 md:py-4">
-    <div class="flex-1 flex flex-col min-h-0 w-full max-w-[95%] lg:max-w-[92%] xl:max-w-[88%] mx-auto">
-      {
-        photos.length > 0 ? (
-          <CarouselGallery photos={photos} randomize={true} />
-        ) : (
-          <div class="flex-1 flex items-center justify-center text-center px-6">
-            <p class="text-beige-700 text-lg">
-              Sin fotos en el carrusel todavía. Agrégalas desde{" "}
-              <a class="underline" href="/admin/" data-astro-reload>
-                /admin
-              </a>
-              .
-            </p>
-          </div>
-        )
-      }
-    </div>
+<BaseLayout active="home" canvas>
+  <h1 class="sr-only">{site.title} — ojoanalogo, fotografía analógica</h1>
+
+  {
+    photos.length > 0 ? (
+      <ProximityWall photos={photos} label="Muro infinito de fotografías" />
+    ) : (
+      <section class="empty">
+        <p class="label-mono text-mute">Rollo vacío</p>
+        <p class="empty-title">Todavía no hay fotos en el muro.</p>
+        <p class="empty-copy">
+          Agrégalas desde{' '}
+          <a href="/admin/" data-astro-reload>
+            /admin
+          </a>
+          .
+        </p>
+      </section>
+    )
+  }
+
+  <div class="corner corner--left">
+    <a href="/about" class="chip">
+      <Mark size={18} />
+      <span>{site.title}</span>
+      <span class="corner-sub">· fotografía analógica</span>
+    </a>
   </div>
+
+  {
+    photos.length > 0 && (
+      <div class="corner corner--right" aria-hidden="true">
+        <div class="chip hud">
+          <span class="hud-hint">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3m-3 15-3-3m3 3 3-3M3 12l3-3m-3 3 3 3m15-3-3-3m3 3-3 3"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            Arrastra para explorar
+          </span>
+          <span class="hud-coords" data-wall-coords>
+            x +0000 · y +0000
+          </span>
+        </div>
+      </div>
+    )
+  }
 </BaseLayout>
+
+<style>
+  .corner {
+    position: fixed;
+    bottom: 22px;
+    z-index: 30;
+    pointer-events: none;
+  }
+
+  .corner > :global(*) {
+    pointer-events: auto;
+  }
+
+  .corner--left {
+    left: 22px;
+  }
+
+  .corner--right {
+    right: 22px;
+  }
+
+  .corner-sub {
+    font-weight: 500;
+    color: var(--color-mute);
+  }
+
+  .hud {
+    gap: 14px;
+  }
+
+  .hud-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hud-hint svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hud-coords {
+    min-width: 15ch;
+    padding-left: 14px;
+    border-left: 1px solid var(--color-line);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--color-mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty {
+    display: grid;
+    place-content: center;
+    gap: 10px;
+    min-height: 100dvh;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .empty-title {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+  }
+
+  .empty-copy {
+    color: var(--color-ink-soft);
+  }
+
+  .empty-copy a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  @media (max-width: 640px) {
+    .corner {
+      bottom: 14px;
+    }
+
+    .corner--left {
+      left: 14px;
+    }
+
+    .corner--right {
+      display: none;
+    }
+
+    .corner-sub {
+      display: none;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .hud-coords {
+      display: none;
+    }
+  }
+</style>

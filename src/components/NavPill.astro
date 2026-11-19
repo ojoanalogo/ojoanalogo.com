@@ -1,0 +1,399 @@
+---
+import { getAlbums } from '../utils/albums';
+import Mark from './Mark.astro';
+
+export interface Props {
+  /** 'home' | 'about' | album slug */
+  active?: string;
+}
+
+const { active } = Astro.props;
+const albums = await getAlbums();
+const current = (id: string) => (active === id ? 'page' : undefined);
+
+let i = 0;
+const nextIndex = () => i++;
+---
+
+<header class="pill-wrap" data-pill-root>
+  <div class="pill" data-pill data-open="false">
+    <div class="pill-bar">
+      <a href="/" class="pill-brand" aria-label="ojoanalogo — inicio">
+        <Mark class="pill-mark" size={18} />
+        <span>ojoanalogo</span>
+      </a>
+      <button
+        type="button"
+        class="pill-burger"
+        data-pill-toggle
+        aria-expanded="false"
+        aria-controls="pill-menu"
+        aria-label="Abrir menú"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <div class="pill-panel" id="pill-menu" data-pill-panel inert>
+      <div class="pill-panel-clip">
+        <nav class="pill-panel-inner" aria-label="Principal">
+          <ul class="pill-list">
+            <li style={`--i:${nextIndex()}`}>
+              <a href="/" aria-current={current('home')}>
+                <span>Inicio</span>
+                <span class="pill-meta">muro</span>
+              </a>
+            </li>
+            <li style={`--i:${nextIndex()}`}>
+              <a href="/about" aria-current={current('about')}>
+                <span>Quién soy</span>
+                <span class="pill-meta">bio</span>
+              </a>
+            </li>
+            <li style={`--i:${nextIndex()}`}>
+              <a href="https://alfon.so" target="_blank" rel="noreferrer" aria-label="Mi otro yo (abre alfon.so en otra pestaña)">
+                <span>Mi otro yo</span>
+                <span class="pill-meta pill-meta--glyph" aria-hidden="true">↗</span>
+              </a>
+            </li>
+          </ul>
+
+          {
+            albums.length > 0 && (
+              <>
+                <p class="pill-label" style={`--i:${nextIndex()}`}>
+                  <span>Álbumes</span>
+                  <span>{String(albums.length).padStart(2, '0')}</span>
+                </p>
+                <ul class="pill-list pill-list--albums">
+                  {albums.map((album) => (
+                    <li style={`--i:${nextIndex()}`}>
+                      <a href={album.href} aria-current={current(album.slug)}>
+                        <span>{album.title}</span>
+                        <span class="pill-meta">
+                          Nº {album.number}
+                          {album.year && <> · {album.year}</>}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )
+          }
+
+          <div class="pill-foot" style={`--i:${nextIndex()}`}>
+            <a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
+            <a href="https://www.instagram.com/ojo.analogo" target="_blank" rel="noreferrer">
+              Instagram ↗
+            </a>
+          </div>
+        </nav>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+  const getPill = () => document.querySelector<HTMLElement>('[data-pill]');
+
+  function setOpen(open: boolean, focusToggle = false) {
+    const pill = getPill();
+    if (!pill) return;
+    const toggle = pill.querySelector<HTMLButtonElement>('[data-pill-toggle]');
+    const panel = pill.querySelector<HTMLElement>('[data-pill-panel]');
+    pill.dataset.open = String(open);
+    toggle?.setAttribute('aria-expanded', String(open));
+    toggle?.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
+    if (panel) panel.inert = !open;
+    if (focusToggle) toggle?.focus();
+  }
+
+  const isOpen = () => getPill()?.dataset.open === 'true';
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as Element | null;
+    if (target?.closest('[data-pill-toggle]')) {
+      setOpen(!isOpen());
+      return;
+    }
+    if (isOpen() && !target?.closest('[data-pill]')) setOpen(false);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen()) setOpen(false, true);
+  });
+
+  document.addEventListener('astro:before-preparation', () => setOpen(false));
+</script>
+
+<style>
+  .pill-wrap {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    z-index: 60;
+    translate: -50% 0;
+    pointer-events: none;
+  }
+
+  .pill {
+    pointer-events: auto;
+    width: 250px;
+    max-width: calc(100vw - 24px);
+    border-radius: 16px;
+    background: var(--color-ink);
+    color: #fff;
+    overflow: hidden;
+    box-shadow:
+      rgb(0 0 0 / 0.34) 0 0.6px 0.6px -1.25px,
+      rgb(0 0 0 / 0.3) 0 2.29px 2.29px -2.5px,
+      rgb(0 0 0 / 0.12) 0 10px 10px -3.75px;
+    transition:
+      width 0.55s var(--ease-folio),
+      border-radius 0.55s var(--ease-folio);
+  }
+
+  .pill[data-open='true'] {
+    width: 340px;
+    border-radius: 20px;
+  }
+
+  .pill-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 8px 8px 8px 12px;
+  }
+
+  .pill-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1;
+  }
+
+  .pill-brand :global(.pill-mark) {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.6s var(--ease-folio);
+  }
+
+  .pill-brand:hover :global(.pill-mark) {
+    transform: scaleY(0.25);
+  }
+
+  .pill-burger {
+    position: relative;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .pill-burger:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .pill-burger span {
+    position: absolute;
+    right: 5px;
+    height: 2px;
+    border-radius: 2px;
+    background: #fff;
+    transition:
+      transform 0.45s var(--ease-folio),
+      opacity 0.3s ease,
+      width 0.45s var(--ease-folio),
+      top 0.45s var(--ease-folio);
+  }
+
+  .pill-burger span:nth-child(1) {
+    top: 9px;
+    width: 22px;
+  }
+
+  .pill-burger span:nth-child(2) {
+    top: 15px;
+    width: 16px;
+  }
+
+  .pill-burger span:nth-child(3) {
+    top: 21px;
+    width: 22px;
+  }
+
+  .pill[data-open='true'] .pill-burger span:nth-child(1) {
+    top: 15px;
+    width: 20px;
+    transform: rotate(45deg);
+  }
+
+  .pill[data-open='true'] .pill-burger span:nth-child(2) {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+
+  .pill[data-open='true'] .pill-burger span:nth-child(3) {
+    top: 15px;
+    width: 20px;
+    transform: rotate(-45deg);
+  }
+
+  .pill-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.55s var(--ease-folio);
+  }
+
+  .pill[data-open='true'] .pill-panel {
+    grid-template-rows: 1fr;
+  }
+
+  .pill-panel-clip {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pill-panel-inner {
+    padding: 4px 12px 14px;
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .pill-list li,
+  .pill-label,
+  .pill-foot {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .pill[data-open='true'] .pill-list li,
+  .pill[data-open='true'] .pill-label,
+  .pill[data-open='true'] .pill-foot {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.5s ease calc(0.08s + var(--i, 0) * 0.035s),
+      transform 0.6s var(--ease-folio) calc(0.08s + var(--i, 0) * 0.035s);
+  }
+
+  .pill-list a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 4px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.028em;
+    line-height: 1.15;
+    color: rgb(255 255 255 / 0.78);
+    transition:
+      color 0.2s ease,
+      transform 0.45s var(--ease-folio);
+  }
+
+  .pill-list a:hover,
+  .pill-list a[aria-current='page'] {
+    color: #fff;
+  }
+
+  .pill-list a:hover {
+    transform: translateX(4px);
+  }
+
+  .pill-list a[aria-current='page'] > span:first-child::after {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-left: 8px;
+    border-radius: 50%;
+    background: #fff;
+    vertical-align: middle;
+    translate: 0 -0.15em;
+  }
+
+  .pill-list--albums a {
+    font-size: 20px;
+  }
+
+  .pill-meta {
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.42);
+  }
+
+  .pill-meta--glyph {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    letter-spacing: 0;
+  }
+
+  .pill-label {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0 4px;
+    padding: 12px 4px 0;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgb(255 255 255 / 0.42);
+  }
+
+  .pill-foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px 12px;
+    margin-top: 12px;
+    padding: 12px 4px 0;
+    border-top: 1px solid rgb(255 255 255 / 0.1);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: rgb(255 255 255 / 0.55);
+  }
+
+  .pill-foot a:hover {
+    color: #fff;
+  }
+
+  @media (max-width: 640px) {
+    .pill-wrap {
+      top: 12px;
+    }
+
+    .pill[data-open='true'] {
+      width: calc(100vw - 24px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pill,
+    .pill-panel,
+    .pill-list li,
+    .pill-label,
+    .pill-foot,
+    .pill-burger span {
+      transition: none !important;
+    }
+  }
+</style>

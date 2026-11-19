@@ -1,61 +1,686 @@
 ---
-import { getCollection, render } from "astro:content";
-import Gallery from "../components/Gallery.astro";
-import BaseLayout from "../layouts/BaseLayout.astro";
-import { gallerySlug } from "../utils/gallery";
-import { resolveGalleryPhotos } from "../utils/galleryPhotos";
+import { render } from 'astro:content';
+import ProximityWall from '../components/ProximityWall.astro';
+import { CONCEPT_PLACEHOLDERS, padWithPlaceholders } from '../data/concept';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatRollDate, getAlbums, type Album } from '../utils/albums';
+import { albumWallPhotos } from '../utils/wallPhotos';
 
 export async function getStaticPaths() {
-  const galleryEntries = await getCollection("gallery");
-  return galleryEntries.map((entry) => ({
-    params: { slug: gallerySlug(entry) },
-    props: { entry },
+  const albums = await getAlbums();
+  return albums.map((album, i) => ({
+    params: { slug: album.slug },
+    props: {
+      album,
+      next: albums.length > 1 ? albums[(i + 1) % albums.length] : undefined,
+    },
   }));
 }
 
-const { entry } = Astro.props;
-const slug = gallerySlug(entry);
-const galleryContent = entry.data;
-const { Content } = await render(entry);
-const photos = resolveGalleryPhotos(galleryContent.photos);
-const pageTitle = galleryContent.title || slug;
+interface Props {
+  album: Album;
+  next?: Album;
+}
+
+const { album, next } = Astro.props;
+const { Content } = await render(album.entry);
+const link = { title: album.title, href: album.href };
+
+const real = await albumWallPhotos(album);
+const photos = CONCEPT_PLACEHOLDERS
+  ? padWithPlaceholders(real, 12, { seed: album.slug, prefer: album.slug, album: link })
+  : real;
+
+const nextPhotos = next ? (await albumWallPhotos(next)).slice(0, 3) : [];
+const nextPreview = next && CONCEPT_PLACEHOLDERS
+  ? padWithPlaceholders(nextPhotos, 3, { seed: next.slug, prefer: next.slug })
+  : nextPhotos;
+
+const rollDate = formatRollDate(album.date);
+const pad = (n: number) => String(n).padStart(2, '0');
+const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
 ---
 
-<BaseLayout title={pageTitle} description={galleryContent.description}>
-  <div class="container mx-auto px-4">
-    <header class="mb-6 text-left md:text-center">
-      <h1
-        class="text-3xl md:text-4xl font-bold text-beige-900 text-left md:text-center capitalize mb-2"
-      >
-        {pageTitle}
-      </h1>
+<BaseLayout title={album.title} description={album.description} active={album.slug} canvas>
+  <noscript>
+    <style is:inline>
+      html.is-canvas, html.is-canvas body { height: auto !important; overflow: auto !important; }
+      [data-album] [data-seq] { display: block !important; }
+      [data-album] [data-album-wall], [data-album] [data-album-dock] { display: none !important; }
+    </style>
+  </noscript>
 
+  <div class="album" data-album data-view="wall">
+    <div class="album-wall" data-album-wall>
       {
-        galleryContent.description && (
-          <div class="text-left md:text-center">
-            <p class="text-lg text-beige-700 leading-snug">
-              {galleryContent.description}
-            </p>
+        photos.length > 0 ? (
+          <ProximityWall photos={photos} label={`Muro del álbum ${album.title}`} />
+        ) : (
+          <div class="album-empty">
+            <p class="label-mono text-mute">Rollo sin revelar</p>
+            <p>Álbum vacío — agrega fotos desde el CMS.</p>
           </div>
         )
       }
-    </header>
-
-    <div
-      class="prose prose-sm prose-beige max-w-none mb-8 text-left md:text-center
-      [&>p]:mb-2 [&>p]:leading-snug [&>h1]:mb-2 [&>h2]:mb-2 [&>h3]:mb-2"
-    >
-      <Content />
     </div>
 
-    {
-      photos.length > 0 ? (
-        <Gallery photos={photos} />
-      ) : (
-        <p class="text-center text-beige-700 py-16">
-          Álbum vacío — agrega fotos desde el CMS.
+    <div class="album-dock" data-album-dock>
+      <article class="album-card">
+        <p class="label-mono text-mute">
+          Álbum Nº {album.number}{rollDate && <> · {rollDate}</>}
         </p>
-      )
-    }
+        <h1 class="album-card-title">{album.title}</h1>
+        {album.description && <p class="album-card-desc">{album.description}</p>}
+        <div class="album-card-note prose prose-sm prose-folio">
+          <Content />
+        </div>
+        <p class="album-card-meta label-mono">
+          <span>{frames(photos.length)}</span>
+          {photos.length > 0 && (
+            <button type="button" class="album-card-link" data-view-set="sequence">
+              Ver en secuencia ↓
+            </button>
+          )}
+        </p>
+      </article>
+
+      {
+        photos.length > 0 && (
+          <div class="view-switch" role="group" aria-label="Modo de vista">
+            <button type="button" data-view-set="wall" aria-pressed="true">
+              Muro
+            </button>
+            <button type="button" data-view-set="sequence" aria-pressed="false">
+              Secuencia
+            </button>
+          </div>
+        )
+      }
+    </div>
+
+    <section class="seq" data-seq aria-label={`${album.title} en secuencia`}>
+      <header class="seq-head">
+        <p class="label-mono text-mute">
+          Álbum Nº {album.number}{rollDate && <> · {rollDate}</>} · {frames(photos.length)}
+        </p>
+        <h2 class="seq-title">{album.title}</h2>
+        <div class="seq-intro">
+          {album.description && <p class="seq-desc">{album.description}</p>}
+          <div class="prose prose-folio">
+            <Content />
+          </div>
+        </div>
+      </header>
+
+      <ol class="seq-list" data-seq-list>
+        {
+          photos.map((photo, i) => (
+            <li class="seq-item">
+              <figure>
+                <button
+                  type="button"
+                  class="seq-open"
+                  data-seq-open={i}
+                  aria-label={`Ampliar: ${photo.alt}`}
+                  style={photo.sized ? `--ar:${(photo.w / photo.h).toFixed(4)}` : undefined}
+                >
+                  <img
+                    src={photo.src}
+                    srcset={photo.srcset}
+                    sizes="(max-width: 768px) 92vw, 80vw"
+                    alt={photo.alt}
+                    loading={i < 2 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    width={photo.sized ? photo.w : undefined}
+                    height={photo.sized ? photo.h : undefined}
+                  />
+                </button>
+                <figcaption>
+                  <span class="label-mono">
+                    {pad(i + 1)} / {pad(photos.length)}
+                  </span>
+                  <span>{photo.alt}</span>
+                  {photo.credit && (
+                    <a class="label-mono seq-credit" href={photo.credit.href} target="_blank" rel="noreferrer">
+                      {photo.credit.label}
+                    </a>
+                  )}
+                </figcaption>
+              </figure>
+            </li>
+          ))
+        }
+      </ol>
+
+      <footer class="seq-end">
+        {
+          next ? (
+            <a class="seq-next" href={`${next.href}#secuencia`}>
+              <span class="label-mono text-mute">Siguiente rollo · Nº {next.number}</span>
+              <span class="seq-next-title">
+                {next.title}
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </span>
+              {nextPreview.length > 0 && (
+                <span class="seq-next-thumbs" aria-hidden="true">
+                  {nextPreview.map((p) => (
+                    <img src={p.src} alt="" loading="lazy" decoding="async" />
+                  ))}
+                </span>
+              )}
+            </a>
+          ) : (
+            <p class="label-mono text-mute">Fin del rollo</p>
+          )
+        }
+        <button type="button" class="btn-line" data-view-set="wall">
+          ↑ Volver al muro
+        </button>
+      </footer>
+    </section>
   </div>
 </BaseLayout>
+
+<script>
+  import { openLightbox } from '../scripts/lightbox';
+  import { wallRegistry } from '../scripts/wall';
+  import type { WallPhoto } from '../types/wall';
+
+  let cleanup: (() => void) | null = null;
+
+  function setup() {
+    cleanup?.();
+    cleanup = null;
+    const album = document.querySelector<HTMLElement>('[data-album]');
+    if (!album) return;
+
+    const ac = new AbortController();
+    const { signal } = ac;
+    const wallRoot = album.querySelector<HTMLElement>('[data-wall]');
+    const getPhotos = (): WallPhoto[] => {
+      const live = wallRoot ? wallRegistry.get(wallRoot)?.photos : undefined;
+      if (live) return live;
+      try {
+        return JSON.parse(wallRoot?.querySelector('[data-wall-data]')?.textContent ?? '[]');
+      } catch {
+        return [];
+      }
+    };
+
+    const setView = (view: 'wall' | 'sequence', updateUrl = true) => {
+      album.dataset.view = view;
+      document.documentElement.classList.toggle('is-canvas', view === 'wall');
+      album.querySelectorAll<HTMLButtonElement>('.view-switch [data-view-set]').forEach((b) => {
+        b.setAttribute('aria-pressed', String(b.dataset.viewSet === view));
+      });
+      const wall = wallRoot ? wallRegistry.get(wallRoot) : undefined;
+      if (view === 'wall') {
+        wall?.resume();
+      } else {
+        wall?.pause();
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+      if (updateUrl) {
+        const url = view === 'sequence' ? `${location.pathname}#secuencia` : location.pathname;
+        history.replaceState(history.state, '', url);
+      }
+    };
+
+    album.addEventListener(
+      'click',
+      (e) => {
+        const target = e.target as Element | null;
+        const switcher = target?.closest<HTMLElement>('[data-view-set]');
+        if (switcher) {
+          setView(switcher.dataset.viewSet === 'sequence' ? 'sequence' : 'wall');
+          return;
+        }
+        const opener = target?.closest<HTMLButtonElement>('[data-seq-open]');
+        if (opener) {
+          const img = opener.querySelector('img');
+          openLightbox(getPhotos(), Number(opener.dataset.seqOpen), {
+            rect: img?.getBoundingClientRect(),
+            src: img?.currentSrc || img?.src,
+            returnFocus: opener,
+          });
+        }
+      },
+      { signal },
+    );
+
+    // Frames rise into place as they enter the viewport.
+    const list = album.querySelector<HTMLElement>('[data-seq-list]');
+    let io: IntersectionObserver | null = null;
+    if (list && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      list.classList.add('seq-animate');
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-in');
+              io?.unobserve(entry.target);
+            }
+          }
+        },
+        { rootMargin: '0px 0px -12% 0px' },
+      );
+      list.querySelectorAll('.seq-item').forEach((item) => io?.observe(item));
+    }
+
+    // Wait a frame so the wall has mounted before we pause/resume it.
+    requestAnimationFrame(() => {
+      if (location.hash === '#secuencia') setView('sequence', false);
+    });
+
+    cleanup = () => {
+      ac.abort();
+      io?.disconnect();
+    };
+  }
+
+  document.addEventListener('astro:page-load', setup);
+  document.addEventListener('astro:before-swap', () => {
+    cleanup?.();
+    cleanup = null;
+  });
+</script>
+
+<style>
+  /* ---------- wall mode ---------- */
+  .album-wall {
+    transition: opacity 0.5s var(--ease-folio);
+  }
+
+  .album[data-view='sequence'] .album-wall {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .album-empty {
+    display: grid;
+    place-content: center;
+    gap: 8px;
+    min-height: 100dvh;
+    padding: 24px;
+    text-align: center;
+    color: var(--color-ink-soft);
+  }
+
+  .album-dock {
+    position: fixed;
+    left: 22px;
+    right: 22px;
+    bottom: 22px;
+    z-index: 30;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    pointer-events: none;
+  }
+
+  .album-dock > * {
+    pointer-events: auto;
+  }
+
+  .album-card {
+    width: min(340px, 100%);
+    padding: 16px 18px 14px;
+    border-radius: 16px;
+    background: var(--color-card);
+    box-shadow:
+      rgb(0 0 0 / 0.34) 0 0.6px 0.6px -1.25px,
+      rgb(0 0 0 / 0.3) 0 2.29px 2.29px -2.5px,
+      rgb(0 0 0 / 0.12) 0 10px 10px -3.75px;
+    transition:
+      opacity 0.4s ease,
+      transform 0.6s var(--ease-folio);
+  }
+
+  .album[data-view='sequence'] .album-card {
+    opacity: 0;
+    transform: translateY(16px);
+    pointer-events: none;
+  }
+
+  .album-card-title {
+    margin-top: 6px;
+    font-size: 34px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.035em;
+  }
+
+  .album-card-desc {
+    margin-top: 8px;
+    font-size: 14.5px;
+    line-height: 1.4;
+    color: var(--color-ink-soft);
+  }
+
+  .album-card-note {
+    margin-top: 6px;
+    font-size: 13px;
+    color: var(--color-mute);
+  }
+
+  .album-card-note :global(p) {
+    margin: 0;
+  }
+
+  .album-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-line);
+    color: var(--color-mute);
+  }
+
+  .album-card-link {
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  .album-card-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .view-switch {
+    display: inline-flex;
+    gap: 2px;
+    padding: 5px;
+    border-radius: 14px;
+    background: var(--color-ink);
+    box-shadow:
+      rgb(0 0 0 / 0.34) 0 0.6px 0.6px -1.25px,
+      rgb(0 0 0 / 0.3) 0 2.29px 2.29px -2.5px,
+      rgb(0 0 0 / 0.12) 0 10px 10px -3.75px;
+  }
+
+  .view-switch button {
+    min-height: 36px;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: rgb(255 255 255 / 0.6);
+    cursor: pointer;
+    transition:
+      background-color 0.3s var(--ease-folio),
+      color 0.2s ease;
+  }
+
+  .view-switch button:hover {
+    color: #fff;
+  }
+
+  .view-switch button[aria-pressed='true'] {
+    background: #fff;
+    color: var(--color-ink);
+  }
+
+  /* ---------- sequence mode ---------- */
+  .seq {
+    display: none;
+    padding: 140px 24px 120px;
+  }
+
+  .album[data-view='sequence'] .seq {
+    display: block;
+    animation: seq-in 0.7s var(--ease-folio) both;
+  }
+
+  @keyframes seq-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+  }
+
+  .seq-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    max-width: 1280px;
+    margin: 0 auto 12vh;
+  }
+
+  .seq-title {
+    font-size: clamp(64px, 13vw, 200px);
+    font-weight: 600;
+    line-height: 0.86;
+    letter-spacing: -0.032em;
+    margin-left: -0.04em;
+  }
+
+  .seq-intro {
+    display: grid;
+    gap: 8px;
+    max-width: 52ch;
+  }
+
+  .seq-desc {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  @media (min-width: 900px) {
+    .seq-head {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 0.55fr);
+      align-items: end;
+      column-gap: 48px;
+    }
+
+    .seq-head > .label-mono {
+      grid-column: 1 / -1;
+    }
+  }
+
+  .seq-list {
+    display: grid;
+    gap: clamp(72px, 16vh, 180px);
+  }
+
+  .seq-item figure {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .seq-item:nth-child(3n + 2) figure {
+    margin-right: max(0px, 6vw);
+  }
+
+  .seq-item:nth-child(3n) figure {
+    margin-left: max(0px, 6vw);
+  }
+
+  .seq-open {
+    display: block;
+    cursor: zoom-in;
+  }
+
+  .seq-open img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(100%, 1200px);
+    max-height: 84vh;
+    max-height: 84dvh;
+    background: rgb(26 26 26 / 0.05);
+  }
+
+  /* Known aspect ratio: reserve the frame before the file arrives. */
+  .seq-open[style] img {
+    aspect-ratio: var(--ar);
+    width: min(1200px, calc(100vw - 48px), calc(84dvh * var(--ar)));
+    max-width: none;
+    max-height: none;
+  }
+
+  @media (max-width: 640px) {
+    .seq-open[style] img {
+      width: min(calc(100vw - 24px), calc(84dvh * var(--ar)));
+    }
+  }
+
+  .seq-item figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+    margin-top: 12px;
+    font-size: 13.5px;
+    color: var(--color-ink-soft);
+  }
+
+  .seq-item figcaption .label-mono:first-child {
+    color: var(--color-ink);
+  }
+
+  .seq-credit {
+    margin-left: auto;
+    color: var(--color-mute);
+  }
+
+  .seq-credit:hover {
+    color: var(--color-ink);
+  }
+
+  .seq-list:global(.seq-animate) .seq-item {
+    opacity: 0;
+    transform: translateY(48px) scale(0.97);
+    transition:
+      opacity 0.9s ease,
+      transform 1.2s var(--ease-folio);
+  }
+
+  .seq-list:global(.seq-animate) .seq-item:global(.is-in) {
+    opacity: 1;
+    transform: none;
+  }
+
+  .seq-end {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    max-width: 1280px;
+    margin: 20vh auto 0;
+    padding-top: 48px;
+    border-top: 1px solid var(--color-line);
+    text-align: center;
+  }
+
+  .seq-next {
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+  }
+
+  .seq-next-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2em;
+    font-size: clamp(48px, 9vw, 128px);
+    font-weight: 600;
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+  }
+
+  .seq-next-title svg {
+    width: 0.6em;
+    height: 0.6em;
+    transition: transform 0.6s var(--ease-folio);
+  }
+
+  .seq-next:hover .seq-next-title svg {
+    transform: translateX(0.15em);
+  }
+
+  .seq-next-thumbs {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .seq-next-thumbs img {
+    width: auto;
+    min-width: 48px;
+    height: 72px;
+    background: rgb(26 26 26 / 0.06);
+    transition: transform 0.6s var(--ease-folio);
+  }
+
+  .seq-next:hover .seq-next-thumbs img:nth-child(1) {
+    transform: translateY(-6px) rotate(-3deg);
+  }
+
+  .seq-next:hover .seq-next-thumbs img:nth-child(2) {
+    transform: translateY(-10px);
+  }
+
+  .seq-next:hover .seq-next-thumbs img:nth-child(3) {
+    transform: translateY(-6px) rotate(3deg);
+  }
+
+  @media (max-width: 640px) {
+    .album-dock {
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+
+    .album-card {
+      width: 100%;
+      padding: 14px 16px 12px;
+    }
+
+    .album-card-title {
+      font-size: 28px;
+    }
+
+    .album-card-note {
+      display: none;
+    }
+
+    .view-switch {
+      align-self: flex-end;
+    }
+
+    .album[data-view='sequence'] .album-dock {
+      flex-direction: row;
+      justify-content: flex-end;
+    }
+
+    .album[data-view='sequence'] .album-card {
+      display: none;
+    }
+
+    .seq {
+      padding: 104px 12px 120px;
+    }
+
+    .seq-item:nth-child(n) figure {
+      margin: 0 auto;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .album[data-view='sequence'] .seq {
+      animation: none;
+    }
+  }
+</style>

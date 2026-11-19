@@ -1,40 +1,43 @@
 ---
-import BaseHead from "../components/BaseHead.astro";
-import Footer from "../components/Footer.astro";
-import Header from "../components/Header.astro";
-import site from "../data/site.json";
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Lightbox from '../components/Lightbox.astro';
+import NavPill from '../components/NavPill.astro';
+import PreviewLoupe from '../components/PreviewLoupe.astro';
+import site from '../data/site.json';
+
+export interface Props {
+  title?: string;
+  description?: string;
+  socialImagePath?: string;
+  /** Highlights the matching menu entry: 'home' | 'about' | album slug. */
+  active?: string;
+  /** Full-screen wall page: no document scroll, no footer. */
+  canvas?: boolean;
+}
 
 const {
-  socialImagePath,
   title = site.title,
   description = site.description,
-  navbarActiveItemID,
-  compactFooter = false,
+  socialImagePath,
+  active,
+  canvas = false,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html
-  lang="es"
-  class="bg-beige-50 text-neutral-800 selection:bg-beige-200 selection:text-neutral-900 h-full"
->
+<html lang="es" class:list={[canvas && 'is-canvas']}>
   <head>
-    <BaseHead
-      title={title}
-      description={description}
-      socialImagePath={socialImagePath}
-    />
+    <BaseHead title={title} description={description} socialImagePath={socialImagePath} />
   </head>
-  <body
-    class:list={[
-      "w-full font-body font-light tracking-wide min-h-screen flex flex-col",
-      compactFooter && "h-dvh max-h-dvh overflow-hidden",
-    ]}
-  >
-    <Header title={site.title} navbarActiveItemID={navbarActiveItemID} />
-    <main id="main" class="px-4 md:px-8 pb-0 flex-1 flex flex-col min-h-0">
+  <body>
+    <a href="#main" class="skip-link chip">Saltar al contenido</a>
+    <NavPill active={active} />
+    <main id="main">
       <slot />
     </main>
-    <Footer compact={compactFooter} />
+    {!canvas && <Footer />}
+    <Lightbox />
+    <PreviewLoupe />
   </body>
 </html>

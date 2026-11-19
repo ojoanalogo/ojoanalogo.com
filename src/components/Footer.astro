@@ -1,59 +1,71 @@
 ---
-import IconInstagram from "./IconInstagram.astro";
-import site from "../data/site.json";
+import IconInstagram from './IconInstagram.astro';
+import Mark from './Mark.astro';
+import site from '../data/site.json';
 
-const { compact = false } = Astro.props;
+const year = new Date().getFullYear();
 ---
 
-<footer class:list={[compact ? "py-2" : ""]}>
-  <div class:list={["max-w-screen-xl mx-auto", compact ? "py-2" : "py-8"]}>
-    <div class="grid grid-cols-1 text-center mx-auto text-gray-600">
-      {
-        compact ? (
-          <div class="flex items-center justify-center gap-3 text-sm">
-            <p class="font-display text-base m-0">{site.title}</p>
-            <span class="opacity-30" aria-hidden="true">
-              ·
-            </span>
-            <a
-              class="font-body font-light hover:opacity-75 transition"
-              href="mailto:hola@ojoanalogo.com"
-            >
-              hola@ojoanalogo.com
-            </a>
-            <span class="opacity-30" aria-hidden="true">
-              ·
-            </span>
-            <a
-              class="transition duration-300 hover:opacity-75"
-              href="https://www.instagram.com/ojo.analogo"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span class="sr-only">Instagram</span>
-              <IconInstagram class="w-4 h-4" />
-            </a>
-          </div>
-        ) : (
-          <>
-            <p class="font-display text-xl">{site.title}</p>
-            <p class="text-sm font-body font-light">
-              <a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
-            </p>
-            <div class="flex mx-auto justify-center mt-2">
-              <a
-                class="transition duration-300 hover:opacity-75"
-                href="https://www.instagram.com/ojo.analogo"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span class="sr-only">Instagram</span>
-                <IconInstagram class="w-6 h-6" />
-              </a>
-            </div>
-          </>
-        )
-      }
+<footer class="site-foot">
+  <div class="site-foot-inner">
+    <a href="/" class="site-foot-brand">
+      <Mark size={20} />
+      <span>ojoanalogo</span>
+      <span class="site-foot-by">— {site.title}</span>
+    </a>
+    <div class="site-foot-links">
+      <a href="mailto:hola@ojoanalogo.com">hola@ojoanalogo.com</a>
+      <a href="https://www.instagram.com/ojo.analogo" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1.5">
+        <IconInstagram class="w-3.5 h-3.5" />
+        Instagram
+      </a>
+      <span class="label-mono text-mute">© {year} · hecho en película</span>
     </div>
   </div>
 </footer>
+
+<style>
+  .site-foot {
+    padding: 48px 24px 32px;
+  }
+
+  .site-foot-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px 32px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-line);
+  }
+
+  .site-foot-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  .site-foot-by {
+    font-weight: 400;
+    color: var(--color-mute);
+  }
+
+  .site-foot-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink-soft);
+  }
+
+  .site-foot-links a:hover {
+    color: var(--color-ink);
+  }
+</style>
