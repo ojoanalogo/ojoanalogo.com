@@ -5,11 +5,15 @@ import Lightbox from '../components/Lightbox.astro';
 import NavPill from '../components/NavPill.astro';
 import PreviewLoupe from '../components/PreviewLoupe.astro';
 import site from '../data/site.json';
+import { formatTitle } from '../utils/seo';
 
 export interface Props {
+  /** Page title segment — branded via formatTitle (omit on home). */
   title?: string;
   description?: string;
   socialImagePath?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
   /** Highlights the matching menu entry: 'home' | 'about' | album slug. */
   active?: string;
   /** Full-screen wall page: no document scroll, no footer. */
@@ -19,19 +23,30 @@ export interface Props {
 }
 
 const {
-  title = site.title,
+  title: pageTitle,
   description = site.description,
   socialImagePath,
+  ogType,
+  noindex = false,
   active,
   canvas = false,
   loupe = false,
 } = Astro.props;
+
+const title = formatTitle(pageTitle);
+const shareImage = socialImagePath || site.ogImage || undefined;
 ---
 
 <!doctype html>
 <html lang="es" class:list={[canvas && 'is-canvas']}>
   <head>
-    <BaseHead title={title} description={description} socialImagePath={socialImagePath} />
+    <BaseHead
+      title={title}
+      description={description}
+      socialImagePath={shareImage}
+      ogType={ogType}
+      noindex={noindex}
+    />
   </head>
   <body>
     <a href="#main" class="skip-link chip">Saltar al contenido</a>

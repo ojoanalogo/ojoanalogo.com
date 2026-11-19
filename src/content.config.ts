@@ -15,11 +15,10 @@ const gallerySchema = z.object({
   photos: z.array(cmsPhotoSchema).optional(),
 });
 
-export type GallerySchema = z.infer<typeof gallerySchema>;
 export type CmsPhoto = z.infer<typeof cmsPhotoSchema>;
 
 const galleryCollection = defineCollection({
-  loader: glob({ pattern: '**/index.{md,mdx}', base: './src/content/gallery' }),
+  loader: glob({ pattern: '**/index.md', base: './src/content/gallery' }),
   schema: gallerySchema,
 });
 

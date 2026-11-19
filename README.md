@@ -34,7 +34,7 @@ So: **R2 = binaries**, **git = the registry** (URLs + text).
 ## Edit content
 
 1. Open `/admin/`, sign in (GitHub PAT or OAuth).
-2. **Landing** → carousel photos, about portrait, OG image.
+2. **Landing** → featured wall photos (order on the home muro), about portrait, OG image.
 3. **Albums** → create/edit galleries and their photo lists.
 4. Publish → wait for Pages deploy.
 

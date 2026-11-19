@@ -7,8 +7,12 @@ import { homeWallPhotos } from '../utils/wallPhotos';
 const photos = await homeWallPhotos(await getAlbums());
 ---
 
-<BaseLayout title="404: Rollo no encontrado" canvas>
-  {photos.length > 0 && <ProximityWall photos={photos} muted label="Muro de fotografías (fondo)" />}
+<BaseLayout title="404: Rollo no encontrado" canvas noindex>
+  {
+    photos.length > 0 && (
+      <ProximityWall photos={photos} muted decorative label="Muro de fotografías (fondo)" />
+    )
+  }
 
   <div class="nf">
     <section class="nf-card">

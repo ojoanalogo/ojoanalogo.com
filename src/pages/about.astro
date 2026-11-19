@@ -8,9 +8,16 @@ import { homeWallPhotos } from '../utils/wallPhotos';
 
 const portraitUrl = site.portraitUrl?.trim() || '';
 const wallPhotos = portraitUrl ? [] : await homeWallPhotos(await getAlbums());
+const aboutDescription =
+  'Ingeniero de software y fotógrafo. Instantáneas analógicas — paciencia, sorpresa y grano.';
 ---
 
-<BaseLayout title="Quién soy" active="about">
+<BaseLayout
+  title="Quién soy"
+  description={aboutDescription}
+  socialImagePath={portraitUrl || undefined}
+  active="about"
+>
   <section class="about">
     <div class="about-frame">
       {
@@ -53,12 +60,24 @@ const wallPhotos = portraitUrl ? [] : await homeWallPhotos(await getAlbums());
       </p>
 
       <div class="about-actions">
-        <a class="btn-ink" href="https://instagram.com/ojo.analogo/" target="_blank" rel="noreferrer">
+        <a
+          class="btn-ink"
+          href="https://www.instagram.com/ojo.analogo/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Instagram de ojo.analogo (se abre en una pestaña nueva)"
+        >
           <IconInstagram class="w-4 h-4" />
           Instagram
         </a>
         <a class="btn-line" href="mailto:hola@ojoanalogo.com">Contáctame</a>
-        <a class="about-other" href="https://alfon.so" target="_blank" rel="noreferrer">
+        <a
+          class="about-other"
+          href="https://alfon.so"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="alfon.so (se abre en una pestaña nueva)"
+        >
           Mi otro yo ↗
         </a>
       </div>

@@ -386,7 +386,7 @@
     }
 
     function paint() {
-      if (document.documentElement.dataset.view === "list") return;
+      if (document.documentElement.dataset.view === "sequence") return;
       if (document.visibilityState !== "visible") return;
       if (!dirty && !dragging) return;
 
@@ -784,7 +784,7 @@
     color: #fff;
   }
 
-  :global(html[data-view="list"]) .ploupe {
+  :global(html[data-view='sequence']) .ploupe {
     opacity: 0;
     pointer-events: none;
   }

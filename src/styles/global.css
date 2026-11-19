@@ -64,14 +64,6 @@
   }
 }
 
-/* Folio elevation — the same soft triple shadow the floating chrome uses. */
-@utility shadow-folio {
-  box-shadow:
-    rgb(0 0 0 / 0.34) 0 0.6px 0.6px -1.25px,
-    rgb(0 0 0 / 0.3) 0 2.29px 2.29px -2.5px,
-    rgb(0 0 0 / 0.12) 0 10px 10px -3.75px;
-}
-
 /* Film-edge metadata: tiny monospaced uppercase labels. */
 @utility label-mono {
   font-family: var(--font-mono);
@@ -80,12 +72,6 @@
   line-height: 1.3;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-}
-
-/* Photo titles & descriptions — Crimson Pro roman. */
-@utility text-photo {
-  font-family: var(--font-serif);
-  font-style: normal;
 }
 
 @utility prose-folio {
