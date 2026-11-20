@@ -1,202 +1,155 @@
 ---
 /**
  * Preview loupe — top-down disc with rubber ocular + CSS-space optical glass.
- * Optical preview is always 2×. Dive only in lightbox: a quiet +/− chip
- * appears snug under the loupe on hover/focus — never on the drag disc.
+ * Zoom is always 2× for now; 5× dial/wheel stays behind ZOOM_5X_ENABLED.
  */
 ---
 
 <div
-  class="ploupe-root"
-  data-ploupe-root
+  class="ploupe"
+  data-preview-loupe
+  role="group"
+  aria-label="Lupa Preview: arrastra para ampliar a 2×"
+  data-zoom-5x="off"
+  style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
 >
-  <div class="ploupe-scrim" data-ploupe-scrim hidden aria-hidden="true"></div>
-  <div
-    class="ploupe"
-    data-preview-loupe
-    role="group"
-    aria-label="Lupa Preview: arrastra para ampliar. Con la foto abierta, acerca con el control bajo la lupa."
-    style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
-  >
-    <div class="ploupe-shadow" aria-hidden="true"></div>
+  <div class="ploupe-shadow" aria-hidden="true"></div>
 
-    <div class="ploupe-body">
-      <div class="ploupe-support" aria-hidden="true"></div>
-      <div class="ploupe-support-sheen" aria-hidden="true"></div>
+  <div class="ploupe-body">
+    <div class="ploupe-support" aria-hidden="true"></div>
+    <div class="ploupe-support-sheen" aria-hidden="true"></div>
 
-      <canvas class="ploupe-glass" data-ploupe-glass width="280" height="280"></canvas>
-      <div class="ploupe-flare" aria-hidden="true"></div>
-      <div class="ploupe-glass-rim" aria-hidden="true"></div>
+    <canvas class="ploupe-glass" data-ploupe-glass width="280" height="280"></canvas>
+    <div class="ploupe-flare" aria-hidden="true"></div>
+    <div class="ploupe-glass-rim" aria-hidden="true"></div>
 
-      <div class="ploupe-rubber" aria-hidden="true"></div>
-      <svg class="ploupe-mark" viewBox="0 0 100 100" aria-hidden="true">
-        <defs>
-          <path id="ploupe-arc" d="M 16,76 A 40,40 0 0 0 84,76" fill="none"></path>
-        </defs>
-        <text>
-          <textPath
-            href="#ploupe-arc"
-            xlink:href="#ploupe-arc"
-            startOffset="50%"
-            text-anchor="middle"
-            data-ploupe-label
-          >
-            PREVIEW 2×
-          </textPath>
-        </text>
-      </svg>
-    </div>
+    <div class="ploupe-rubber" aria-hidden="true"></div>
+    <svg class="ploupe-mark" viewBox="0 0 100 100" aria-hidden="true">
+      <defs>
+        <path id="ploupe-arc" d="M 16,76 A 40,40 0 0 0 84,76" fill="none"></path>
+      </defs>
+      <text>
+        <textPath
+          href="#ploupe-arc"
+          xlink:href="#ploupe-arc"
+          startOffset="50%"
+          text-anchor="middle"
+          data-ploupe-label
+        >
+          PREVIEW 2×
+        </textPath>
+      </text>
+    </svg>
 
-    <!-- Snug under the disc; visible on hover only (lightbox). -->
-    <div class="ploupe-zoom" data-ploupe-zoom hidden>
-      <button type="button" class="ploupe-zoom-btn" data-ploupe-dive aria-pressed="false" aria-label="Acercar lupa">
-        <span data-ploupe-dive-glyph aria-hidden="true">+</span>
-      </button>
-    </div>
+    <!-- 5× mode: hit target over PREVIEW engraving (hidden while disabled) -->
+    <button
+      type="button"
+      class="ploupe-preview-hit"
+      data-ploupe-preview-hit
+      aria-label="Mostrar selector de aumento"
+      aria-controls="ploupe-dial"
+      hidden
+    ></button>
+  </div>
+
+  <!-- 5× mode: zoom dial (hidden while disabled) -->
+  <div class="ploupe-dial" id="ploupe-dial" role="group" aria-label="Aumento" data-ploupe-dial hidden>
+    <span class="ploupe-dial-thumb" data-zoom-thumb aria-hidden="true"></span>
+    <button type="button" class="ploupe-dial-btn" data-zoom-set="2" aria-pressed="true">2×</button>
+    <button type="button" class="ploupe-dial-btn" data-zoom-set="5" aria-pressed="false">5×</button>
   </div>
 </div>
 
 <script>
   function initPreviewLoupe(root: HTMLElement) {
-    const shell = root.closest<HTMLElement>('[data-ploupe-root]') ?? root.parentElement;
-    const scrim = shell?.querySelector<HTMLElement>('[data-ploupe-scrim]');
-    const canvas = root.querySelector<HTMLCanvasElement>('[data-ploupe-glass]')!;
-    const ctx = canvas.getContext('2d', { alpha: true })!;
-    const labelEl = root.querySelector<SVGTextPathElement>('[data-ploupe-label]')!;
-    const zoomChip = root.querySelector<HTMLElement>('[data-ploupe-zoom]')!;
-    const diveBtn = root.querySelector<HTMLButtonElement>('[data-ploupe-dive]')!;
-    const diveGlyph = root.querySelector<HTMLElement>('[data-ploupe-dive-glyph]');
+    const canvas = root.querySelector<HTMLCanvasElement>("[data-ploupe-glass]")!;
+    const ctx = canvas.getContext("2d", { alpha: true })!;
+    const labelEl = root.querySelector<SVGTextPathElement>("[data-ploupe-label]")!;
+    const dialBtns = [...root.querySelectorAll<HTMLButtonElement>("[data-zoom-set]")];
 
-    const plate = document.createElement('canvas');
-    const plateCtx = plate.getContext('2d', { willReadFrequently: true })!;
-    const blit = document.createElement('canvas');
-    const blitCtx = blit.getContext('2d')!;
+    const plate = document.createElement("canvas");
+    const plateCtx = plate.getContext("2d", { willReadFrequently: true })!;
+    const blit = document.createElement("canvas");
+    const blitCtx = blit.getContext("2d")!;
 
+    /** Flip to true to restore 5× + dial / wheel switching. */
+    const ZOOM_5X_ENABLED = false;
+    type ZoomMode = 2 | 5;
     const WARP = 128;
     const IOR = 0.24;
     /** Glass is inset 22% → 56% of the loupe disc (.ploupe-glass). */
     const GLASS_FRAC = 0.56;
-    const OPTICAL = 2;
-    /** Extra sample push while diving (label stays 2×). */
-    /** Extra sample push while diving (half of the previous 1.75). */
-    const DIVE_PUSH = 1.375;
-    const DIVE_SIZE = 1.325;
 
-    let dive = false;
-    let diveVis = 1;
-    let diveRaf = 0;
-    let baseSize = 168;
+    let zoom: ZoomMode = 2;
+    let zoomVis = 2;
+    let zoomRaf = 0;
     let sizeCss = 168;
     let dragging = false;
     let dirty = true;
     let warpSize = 0;
     let outBuf: ImageData | null = null;
-    let lastKey = '';
+    let lastKey = "";
     let raf = 0;
     let vw = window.innerWidth;
     let vh = window.innerHeight;
     let grabDX = 0;
     let grabDY = 0;
     let inLightbox = false;
-    let lightboxRect: { left: number; top: number; width: number; height: number } | null = null;
     let glideTimer = 0;
-    let savedPos: { x: number; y: number } | null = null;
-    const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const fallBack =
-      getComputedStyle(document.documentElement).getPropertyValue('--color-paper').trim() ||
+      getComputedStyle(document.documentElement).getPropertyValue("--color-paper").trim() ||
       getComputedStyle(document.body).backgroundColor ||
-      '#f5f5f5';
+      "#f5f5f5";
 
-    function syncDiveUi() {
-      root.classList.toggle('is-diving', dive);
-      document.documentElement.classList.toggle('ploupe-diving', dive);
-      // Quiet chip only in lightbox; hover reveals it (always on while diving).
-      zoomChip.hidden = !inLightbox;
-      if (labelEl) labelEl.textContent = dive ? 'PREVIEW' : 'PREVIEW 2×';
-      diveBtn.setAttribute('aria-pressed', String(dive));
-      diveBtn.setAttribute('aria-label', dive ? 'Alejar lupa' : 'Acercar lupa');
-      if (diveGlyph) diveGlyph.textContent = dive ? '−' : '+';
-      if (scrim) {
-        if (dive) {
-          scrim.hidden = false;
-          requestAnimationFrame(() => scrim.classList.add('is-on'));
-        } else {
-          scrim.classList.remove('is-on');
-          window.setTimeout(() => {
-            if (!dive) scrim.hidden = true;
-          }, reducedMotion() ? 0 : 320);
-        }
+    function syncZoomUi() {
+      if (labelEl) labelEl.textContent = `PREVIEW ${zoom}×`;
+      root.dataset.zoom = String(zoom);
+      for (const btn of dialBtns) {
+        btn.setAttribute("aria-pressed", String(btn.dataset.zoomSet === String(zoom)));
       }
     }
 
-    function tickDive() {
-      diveRaf = requestAnimationFrame(() => {
-        const target = dive ? DIVE_PUSH : 1;
-        const diff = target - diveVis;
-        if (Math.abs(diff) < 0.015) {
-          diveVis = target;
-          diveRaf = 0;
+    function setZoom(next: ZoomMode) {
+      if (!ZOOM_5X_ENABLED && next !== 2) next = 2;
+      if (next === zoom) return;
+      zoom = next;
+      syncZoomUi();
+      if (!zoomRaf) tickZoom();
+    }
+
+    function tickZoom() {
+      zoomRaf = requestAnimationFrame(() => {
+        const diff = zoom - zoomVis;
+        if (Math.abs(diff) < 0.02) {
+          zoomVis = zoom;
+          zoomRaf = 0;
         } else {
-          diveVis += diff * (reducedMotion() ? 1 : 0.28);
-          tickDive();
+          zoomVis += diff * 0.38;
+          tickZoom();
         }
-        applySize();
         dirty = true;
-        lastKey = '';
+        lastKey = "";
         schedule();
       });
-    }
-
-    function diveTarget() {
-      if (lightboxRect && lightboxRect.width > 48) {
-        return {
-          x: lightboxRect.left + lightboxRect.width / 2,
-          y: lightboxRect.top + lightboxRect.height / 2,
-        };
-      }
-      return { x: vw / 2, y: vh / 2 };
-    }
-
-    /** Dive only while the lightbox is open (large image). */
-    function setDive(next: boolean) {
-      if (next === dive) return;
-      if (next && !inLightbox) return;
-      if (next) {
-        const c = centre();
-        savedPos = { x: c.x, y: c.y };
-      }
-      dive = next;
-      syncDiveUi();
-      applySize();
-      if (next) {
-        const t = diveTarget();
-        place(t.x, t.y, { glide: !reducedMotion(), clamp: true });
-      } else if (savedPos) {
-        place(savedPos.x, savedPos.y, { glide: !reducedMotion() });
-        savedPos = null;
-      }
-      if (!diveRaf) tickDive();
-    }
-
-    function toggleDive() {
-      if (!inLightbox && !dive) return;
-      setDive(!dive);
     }
 
     function centre() {
       const h = homePos();
       return {
-        x: parseFloat(root.style.getPropertyValue('--pl-x')) || h.x,
-        y: parseFloat(root.style.getPropertyValue('--pl-y')) || h.y,
+        x: parseFloat(root.style.getPropertyValue("--pl-x")) || h.x,
+        y: parseFloat(root.style.getPropertyValue("--pl-y")) || h.y,
       };
     }
 
     /** Rest above the “Arrastra para explorar” HUD chip when present. */
     function homePos() {
-      const hud = document.querySelector('[data-wall-coords]')?.closest('.chip');
+      const hud = document.querySelector("[data-wall-coords]")?.closest(".chip");
       if (hud) {
         const r = hud.getBoundingClientRect();
+        // During ClientRouter swaps the chip can briefly report 0×0 → (0,0).
+        // Never treat that as home or we clamp into the top-left corner.
         if (r.width > 40 && r.height > 20 && r.bottom > 40 && r.right > 40) {
           return {
             x: r.left + r.width / 2,
@@ -207,8 +160,8 @@
       return { x: vw - 100, y: vh - 22 - sizeCss * 0.9 - 40 };
     }
 
+    /** Snap/glide to home after layout is trustworthy (esp. post view-transition). */
     function goHome(glide = false) {
-      if (dive) setDive(false);
       syncSize();
       const apply = () => {
         const h = homePos();
@@ -227,44 +180,49 @@
         y = Math.max(pad, Math.min(vh - pad, y));
       }
       if (glide && !reducedMotion()) {
-        root.classList.add('is-gliding');
+        root.classList.add("is-gliding");
         window.clearTimeout(glideTimer);
-        glideTimer = window.setTimeout(() => root.classList.remove('is-gliding'), 560);
+        glideTimer = window.setTimeout(() => root.classList.remove("is-gliding"), 560);
       } else {
-        root.classList.remove('is-gliding');
+        root.classList.remove("is-gliding");
       }
-      root.style.setProperty('--pl-x', `${x}px`);
-      root.style.setProperty('--pl-y', `${y}px`);
+      root.style.setProperty("--pl-x", `${x}px`);
+      root.style.setProperty("--pl-y", `${y}px`);
       dirty = true;
       schedule();
     }
 
-    function readLightboxRect(rect?: { left: number; top: number; width: number; height: number }) {
-      if (rect && rect.width > 48) return rect;
-      const img = document.querySelector<HTMLElement>('[data-lb-img]');
-      if (!img) return null;
-      const left = parseFloat(img.style.left);
-      const top = parseFloat(img.style.top);
-      const width = parseFloat(img.style.width);
-      const height = parseFloat(img.style.height);
-      if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
-      return { left, top, width, height };
-    }
-
+    /**
+     * Sit just outside the fullscreen lightbox frame — bottom-right corner,
+     * nudged further right so the glass is not on top of the photo.
+     * Uses the layout rect from lightbox (FLIP-safe), not getBoundingClientRect.
+     */
     function parkOnLightbox(rect?: { left: number; top: number; width: number; height: number }) {
-      if (dive) setDive(false);
       inLightbox = true;
-      const r = readLightboxRect(rect);
-      lightboxRect = r;
-      syncDiveUi();
+      const r =
+        rect && rect.width > 48
+          ? rect
+          : (() => {
+              // Fallback: read target layout from inline styles (ignores FLIP transform).
+              const img = document.querySelector<HTMLElement>("[data-lb-img]");
+              if (!img) return null;
+              const left = parseFloat(img.style.left);
+              const top = parseFloat(img.style.top);
+              const width = parseFloat(img.style.width);
+              const height = parseFloat(img.style.height);
+              if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
+              return { left, top, width, height };
+            })();
 
       if (r) {
         const right = r.left + r.width;
         const bottom = r.top + r.height;
         const roomRight = vw - right;
         if (roomRight > sizeCss * 0.5) {
+          // Outside the frame, just past the bottom-right corner.
           place(right + sizeCss * 0.4, bottom - sizeCss * 0.18, { glide: true });
         } else {
+          // Full-bleed width: hang under the bottom-right corner instead.
           place(right - sizeCss * 0.18, bottom + sizeCss * 0.4, { glide: true });
         }
       } else {
@@ -272,21 +230,19 @@
       }
     }
 
+    /** Leave the preview — glide straight back to the wall resting spot. */
     function leaveLightbox() {
       if (!inLightbox) return;
-      if (dive) setDive(false);
       inLightbox = false;
-      lightboxRect = null;
-      syncDiveUi();
       const h = homePos();
       place(h.x, h.y, { glide: !reducedMotion() });
     }
 
-    function applySize() {
-      const sizeMul = 1 + (DIVE_SIZE - 1) * ((diveVis - 1) / (DIVE_PUSH - 1 || 1));
-      const mul = dive || diveVis > 1.02 ? Math.max(1, sizeMul) : 1;
-      sizeCss = Math.round(baseSize * mul);
-      root.style.setProperty('--pl-size', `${sizeCss}px`);
+    function syncSize() {
+      vw = window.innerWidth;
+      vh = window.innerHeight;
+      sizeCss = Math.min(180, Math.max(140, Math.round(vw * 0.14)));
+      root.style.setProperty("--pl-size", `${sizeCss}px`);
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const px = Math.round(sizeCss * GLASS_FRAC * dpr);
       if (canvas.width !== px) {
@@ -297,32 +253,19 @@
       }
     }
 
-    function syncSize() {
-      vw = window.innerWidth;
-      vh = window.innerHeight;
-      baseSize = Math.min(180, Math.max(140, Math.round(vw * 0.14)));
-      applySize();
-    }
-
+    /** CSS diameter of the glass — optical zoom lives in CSS px (DPR / page-zoom safe). */
     function glassCss() {
       return canvas.clientWidth || sizeCss * GLASS_FRAC;
     }
 
-    /** Effective optical factor: 2× idle, pushed closer while diving. */
-    function optical() {
-      return OPTICAL * diveVis;
-    }
-
     function imgUnder(cx: number, cy: number): HTMLImageElement | null {
-      root.style.pointerEvents = 'none';
-      if (scrim) scrim.style.pointerEvents = 'none';
+      root.style.pointerEvents = "none";
       const stack = document.elementsFromPoint(cx, cy);
-      root.style.pointerEvents = '';
-      if (scrim && dive) scrim.style.pointerEvents = '';
+      root.style.pointerEvents = "";
       for (const el of stack) {
         if (el instanceof HTMLImageElement && el.naturalWidth > 0) return el;
         if (el instanceof HTMLElement) {
-          const img = el.querySelector('img');
+          const img = el.querySelector("img");
           if (img?.naturalWidth) return img;
         }
       }
@@ -354,7 +297,8 @@
       if (img) {
         const rect = img.getBoundingClientRect();
         if (rect.width > 1 && rect.height > 1) {
-          const srcCss = (glassCss() / optical()) * 1.12;
+          // True N× in CSS space; 1.12 pad feeds the refraction plate only.
+          const srcCss = (glassCss() / zoomVis) * 1.12;
           const scaleX = img.naturalWidth / rect.width;
           const scaleY = img.naturalHeight / rect.height;
           const srcW = srcCss * scaleX;
@@ -381,6 +325,7 @@
       try {
         src = plateCtx.getImageData(0, 0, plateN, plateN).data;
       } catch {
+        // Cross-origin frame without CORS — leave the paper fill.
         ctx.clearRect(0, 0, size, size);
         ctx.fillStyle = fallBack;
         ctx.beginPath();
@@ -428,34 +373,34 @@
       ctx.clip();
       blitCtx.putImageData(outBuf!, 0, 0);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(blit, 0, 0, size, size);
 
       const vig = ctx.createRadialGradient(R * 0.7, R * 0.58, R * 0.12, R, R, R);
-      vig.addColorStop(0, 'rgba(255,255,255,0.12)');
-      vig.addColorStop(0.5, 'rgba(255,255,255,0)');
-      vig.addColorStop(1, 'rgba(18,16,12,0.22)');
+      vig.addColorStop(0, "rgba(255,255,255,0.12)");
+      vig.addColorStop(0.5, "rgba(255,255,255,0)");
+      vig.addColorStop(1, "rgba(18,16,12,0.22)");
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, size, size);
       ctx.restore();
     }
 
     function paint() {
-      if (document.documentElement.dataset.view === 'sequence') return;
-      if (document.visibilityState !== 'visible') return;
+      if (document.documentElement.dataset.view === "sequence") return;
+      if (document.visibilityState !== "visible") return;
       if (!dirty && !dragging) return;
 
       const { x: cx, y: cy } = centre();
       const img = imgUnder(cx, cy);
       const rect = img?.getBoundingClientRect();
       const key = [
-        optical().toFixed(2),
+        zoomVis.toFixed(2),
         glassCss() | 0,
         cx | 0,
         cy | 0,
-        img?.currentSrc ?? '',
-        rect ? `${rect.left | 0},${rect.top | 0},${rect.width | 0}` : '',
-      ].join('|');
+        img?.currentSrc ?? "",
+        rect ? `${rect.left | 0},${rect.top | 0},${rect.width | 0}` : "",
+      ].join("|");
 
       if (!dragging && key === lastKey) {
         dirty = false;
@@ -476,7 +421,7 @@
 
     function onInvalidate() {
       dirty = true;
-      lastKey = '';
+      lastKey = "";
       if (raf) {
         cancelAnimationFrame(raf);
         raf = 0;
@@ -484,10 +429,9 @@
       paint();
     }
 
-    root.addEventListener('pointerdown', (e) => {
+    root.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
-      // Zoom chip is outside the disc; never start a drag from it.
-      if ((e.target as HTMLElement).closest('.ploupe-zoom')) return;
+      if ((e.target as HTMLElement).closest(".ploupe-dial, .ploupe-preview-hit")) return;
       e.preventDefault();
       e.stopPropagation();
       const c = centre();
@@ -495,12 +439,12 @@
       grabDY = e.clientY - c.y;
       dragging = true;
       dirty = true;
-      root.classList.add('is-held');
-      root.classList.remove('is-gliding');
+      root.classList.add("is-held");
+      root.classList.remove("is-gliding");
       root.setPointerCapture(e.pointerId);
       schedule();
     });
-    root.addEventListener('pointermove', (e) => {
+    root.addEventListener("pointermove", (e) => {
       if (!dragging) return;
       e.preventDefault();
       place(e.clientX - grabDX, e.clientY - grabDY);
@@ -508,7 +452,7 @@
     const end = (e: PointerEvent) => {
       if (!dragging) return;
       dragging = false;
-      root.classList.remove('is-held');
+      root.classList.remove("is-held");
       dirty = true;
       schedule();
       try {
@@ -517,112 +461,98 @@
         /* ok */
       }
     };
-    root.addEventListener('pointerup', end);
-    root.addEventListener('pointercancel', end);
+    root.addEventListener("pointerup", end);
+    root.addEventListener("pointercancel", end);
 
-    zoomChip.addEventListener('pointerdown', (e) => {
-      e.stopPropagation();
-    });
-    diveBtn.addEventListener('click', (e) => {
+    // ——— 5× mode (dormant while ZOOM_5X_ENABLED is false) ———
+    root.addEventListener(
+      "wheel",
+      (e) => {
+        if (!ZOOM_5X_ENABLED) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.deltaY < 0 && zoom !== 5) setZoom(5);
+        else if (e.deltaY > 0 && zoom !== 2) setZoom(2);
+      },
+      { passive: false },
+    );
+    root.addEventListener("click", (e) => {
+      if (!ZOOM_5X_ENABLED) return;
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-zoom-set]");
+      if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      toggleDive();
+      setZoom(btn.dataset.zoomSet === "2" ? 2 : 5);
     });
 
-    scrim?.addEventListener('click', () => {
-      if (dive) setDive(false);
-    });
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && dive) {
-        e.preventDefault();
-        setDive(false);
-      }
-    });
-
-    syncDiveUi();
+    syncZoomUi();
+    if (ZOOM_5X_ENABLED) {
+      root.querySelector<HTMLElement>("[data-ploupe-preview-hit]")?.removeAttribute("hidden");
+      root.querySelector<HTMLElement>("[data-ploupe-dial]")?.removeAttribute("hidden");
+      root.dataset.zoom5x = "on";
+    }
 
     const onViewport = () => {
       syncSize();
       const c = centre();
       place(c.x, c.y);
     };
-    window.addEventListener('resize', onViewport);
-    window.visualViewport?.addEventListener('resize', onViewport);
-    window.visualViewport?.addEventListener('scroll', onInvalidate);
-    window.addEventListener('scroll', onInvalidate, true);
-    window.addEventListener('preview-loupe:invalidate', onInvalidate);
+    window.addEventListener("resize", onViewport);
+    window.visualViewport?.addEventListener("resize", onViewport);
+    window.visualViewport?.addEventListener("scroll", onInvalidate);
+    window.addEventListener("scroll", onInvalidate, true);
+    window.addEventListener("preview-loupe:invalidate", onInvalidate);
     window.addEventListener(
-      'preview-loupe:lightbox',
+      "preview-loupe:lightbox",
       ((e: CustomEvent<{ open: boolean; rect?: { left: number; top: number; width: number; height: number } }>) => {
         if (e.detail?.open) parkOnLightbox(e.detail.rect);
         else leaveLightbox();
       }) as EventListener,
     );
     window.addEventListener(
-      'preview-loupe:corner',
+      "preview-loupe:corner",
       ((e: CustomEvent<{ corner?: string }>) => {
-        if (e.detail?.corner !== 'tl') return;
-        if (dive) setDive(false);
+        if (e.detail?.corner !== "tl") return;
         inLightbox = false;
-        lightboxRect = null;
-        syncDiveUi();
         syncSize();
+        // Top-left of the viewport, clear of the centered nav pill.
         const x = 20 + sizeCss * 0.5;
         const y = 20 + sizeCss * 0.5;
         place(x, y, { glide: true });
         onInvalidate();
       }) as EventListener,
     );
-    window.addEventListener('lt:view', () => {
+    window.addEventListener("lt:view", () => {
       dirty = true;
       schedule();
     });
 
+    // Soft nav / view transitions: re-home once the new page finishes swapping.
     const onPageLoad = () => {
       if (!document.contains(root)) {
-        window.removeEventListener('astro:page-load', onPageLoad);
+        window.removeEventListener("astro:page-load", onPageLoad);
         return;
       }
       inLightbox = false;
       goHome(false);
     };
-    window.addEventListener('astro:page-load', onPageLoad);
+    window.addEventListener("astro:page-load", onPageLoad);
 
     goHome(false);
   }
 
   const booted = new WeakSet<HTMLElement>();
   function boot() {
-    const el = document.querySelector<HTMLElement>('[data-preview-loupe]');
+    const el = document.querySelector<HTMLElement>("[data-preview-loupe]");
     if (!el || booted.has(el)) return;
     booted.add(el);
     initPreviewLoupe(el);
   }
   boot();
-  document.addEventListener('astro:page-load', boot);
+  document.addEventListener("astro:page-load", boot);
 </script>
 
 <style>
-  .ploupe-root {
-    position: contents;
-  }
-
-  .ploupe-scrim {
-    position: fixed;
-    inset: 0;
-    z-index: 85;
-    background: rgb(4 3 2 / 0.78);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .ploupe-scrim:global(.is-on) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
   .ploupe {
     --pl-size: 168px;
     position: fixed;
@@ -638,8 +568,6 @@
     -webkit-user-select: none;
     filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.22)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.12));
     transition:
-      width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-      height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
       filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.35s ease;
   }
@@ -647,8 +575,6 @@
   .ploupe:global(.is-gliding) {
     transition:
       transform 0.52s cubic-bezier(0.22, 1, 0.36, 1),
-      width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-      height 0.45s cubic-bezier(0.22, 1, 0.36, 1),
       filter 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       opacity 0.35s ease;
   }
@@ -656,10 +582,6 @@
   .ploupe:global(.is-held) {
     cursor: grabbing;
     filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.28)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.14));
-  }
-
-  .ploupe:global(.is-diving) {
-    filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.45)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2));
   }
 
   .ploupe-shadow {
@@ -764,73 +686,107 @@
 
   .ploupe-mark text {
     fill: #9a9a9a;
-    font-family: ui-sans-serif, system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
     font-size: 4.4px;
     font-weight: 500;
     letter-spacing: 0.2em;
   }
 
-  /* Quiet +/− glued under the rim — only on hover / while diving. */
-  .ploupe-zoom {
+  /* ——— 5× mode UI (dormant) ——— */
+  .ploupe-preview-hit {
     position: absolute;
-    left: 50%;
-    top: calc(100% + 2px);
-    z-index: 5;
-    transform: translateX(-50%);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.22s ease;
-  }
-
-  .ploupe-zoom[hidden] {
-    display: none;
-  }
-
-  .ploupe:is(:hover, :focus-within):not(:global(.is-held)) .ploupe-zoom:not([hidden]),
-  .ploupe:global(.is-diving) .ploupe-zoom:not([hidden]) {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .ploupe-zoom-btn {
-    display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
+    left: 18%;
+    right: 18%;
+    bottom: 6%;
+    height: 24%;
+    z-index: 4;
     margin: 0;
     padding: 0;
     border: 0;
-    border-radius: 50%;
-    background: rgb(26 26 26 / 0.72);
-    color: rgb(255 255 255 / 0.88);
-    font: 500 14px/1 ui-sans-serif, system-ui, sans-serif;
+    border-radius: 50% / 60%;
+    background: transparent;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
   }
 
-  .ploupe-zoom-btn:hover,
-  .ploupe-zoom-btn:focus-visible {
-    background: rgb(26 26 26 / 0.9);
-    color: #fff;
-  }
-
-  .ploupe-zoom-btn:focus-visible {
-    outline: 2px solid #fff;
-    outline-offset: 1px;
-  }
-
-  :global(html[data-view='sequence']) .ploupe,
-  :global(html[data-view='sequence']) .ploupe-scrim {
+  .ploupe-dial {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 10px);
+    transform: translateX(-50%) translateY(4px);
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.82);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 6px 16px rgb(0 0 0 / 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     opacity: 0;
     pointer-events: none;
+    transition:
+      opacity 0.22s ease,
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:hover) .ploupe-dial,
+  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:focus-visible) .ploupe-dial,
+  .ploupe[data-zoom-5x="on"] .ploupe-dial:hover,
+  .ploupe[data-zoom-5x="on"] .ploupe-dial:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
   }
 
   @media (hover: none) {
-    /* Touch: keep the chip available without hover. */
-    .ploupe:not(:global(.is-held)) .ploupe-zoom:not([hidden]) {
-      opacity: 0.85;
+    .ploupe[data-zoom-5x="on"] .ploupe-dial:not([hidden]) {
+      opacity: 1;
       pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
     }
+  }
+
+  .ploupe-dial-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 4px);
+    height: calc(100% - 6px);
+    border-radius: 999px;
+    background: var(--color-ink, #1a1a1a);
+    transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+
+  .ploupe[data-zoom="5"] .ploupe-dial-thumb {
+    transform: translateX(calc(100% + 2px));
+  }
+
+  .ploupe-dial-btn {
+    position: relative;
+    z-index: 1;
+    min-width: 36px;
+    height: 26px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-mute, #8a8a8a);
+    font: 400 11px/1 var(--font-sans), "Helvetica Neue", sans-serif;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: color 0.28s ease;
+  }
+
+  .ploupe-dial-btn[aria-pressed="true"] {
+    color: #fff;
+  }
+
+  :global(html[data-view='sequence']) .ploupe {
+    opacity: 0;
+    pointer-events: none;
   }
 
   @media (max-width: 520px) {
@@ -841,9 +797,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     .ploupe,
-    .ploupe:global(.is-gliding),
-    .ploupe-scrim,
-    .ploupe-zoom {
+    .ploupe:global(.is-gliding) {
+      transition: none;
+    }
+
+    .ploupe-dial-thumb {
       transition: none;
     }
   }
