@@ -2,7 +2,7 @@
 /**
  * Preview loupe — top-down disc with rubber ocular + CSS-space optical glass.
  * Optical preview is always 2×. Dive (blackout + push closer) only while the
- * lightbox shows a large frame — click PREVIEW on the loupe.
+ * lightbox is open, via a mini menu — never on the disc drag surface.
  */
 ---
 
@@ -15,7 +15,7 @@
     class="ploupe"
     data-preview-loupe
     role="group"
-    aria-label="Lupa Preview: arrastra para ampliar. Con la foto abierta, pulsa PREVIEW para acercarte."
+    aria-label="Lupa Preview: arrastra para ampliar. Con la foto abierta, usa el menú Acercar."
     style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
   >
     <div class="ploupe-shadow" aria-hidden="true"></div>
@@ -45,15 +45,14 @@
           </textPath>
         </text>
       </svg>
+    </div>
 
-      <button
-        type="button"
-        class="ploupe-preview-hit"
-        data-ploupe-preview-hit
-        aria-label="Acercar lupa"
-        aria-pressed="false"
-        hidden
-      ></button>
+    <!-- Outside the disc so drag never hits dive -->
+    <div class="ploupe-menu" data-ploupe-menu hidden>
+      <span class="ploupe-menu-tip" data-ploupe-menu-tip>Acercar la lupa</span>
+      <button type="button" class="ploupe-menu-btn" data-ploupe-dive aria-pressed="false">
+        Acercar
+      </button>
     </div>
   </div>
 </div>
@@ -65,7 +64,10 @@
     const canvas = root.querySelector<HTMLCanvasElement>('[data-ploupe-glass]')!;
     const ctx = canvas.getContext('2d', { alpha: true })!;
     const labelEl = root.querySelector<SVGTextPathElement>('[data-ploupe-label]')!;
-    const diveBtn = root.querySelector<HTMLButtonElement>('[data-ploupe-preview-hit]')!;
+    const menu = root.querySelector<HTMLElement>('[data-ploupe-menu]')!;
+    const diveBtn = root.querySelector<HTMLButtonElement>('[data-ploupe-dive]')!;
+    const menuTip = root.querySelector<HTMLElement>('[data-ploupe-menu-tip]');
+    let tipTimer = 0;
 
     const plate = document.createElement('canvas');
     const plateCtx = plate.getContext('2d', { willReadFrequently: true })!;
@@ -110,11 +112,16 @@
     function syncDiveUi() {
       root.classList.toggle('is-diving', dive);
       document.documentElement.classList.toggle('ploupe-diving', dive);
-      // Dive control only while viewing a large lightbox frame.
-      diveBtn.hidden = !inLightbox;
+      // Mini menu only while viewing a large lightbox frame — not on the drag disc.
+      menu.hidden = !inLightbox;
       if (labelEl) labelEl.textContent = dive ? 'PREVIEW' : 'PREVIEW 2×';
       diveBtn.setAttribute('aria-pressed', String(dive));
+      diveBtn.textContent = dive ? 'Alejar' : 'Acercar';
       diveBtn.setAttribute('aria-label', dive ? 'Alejar lupa' : 'Acercar lupa');
+      if (menuTip) {
+        menuTip.textContent = dive ? 'Volver' : 'Acercar la lupa';
+        menuTip.hidden = dive;
+      }
       if (scrim) {
         if (dive) {
           scrim.hidden = false;
@@ -126,6 +133,14 @@
           }, reducedMotion() ? 0 : 320);
         }
       }
+    }
+
+    /** Brief tip when the lightbox opens so dive isn’t confused with drag. */
+    function flashMenuTip() {
+      if (!menuTip || !inLightbox) return;
+      menu.classList.add('is-tip');
+      window.clearTimeout(tipTimer);
+      tipTimer = window.setTimeout(() => menu.classList.remove('is-tip'), 2600);
     }
 
     function tickDive() {
@@ -268,6 +283,7 @@
       } else {
         place(vw - sizeCss * 0.45, vh * 0.62, { glide: true });
       }
+      flashMenuTip();
     }
 
     function leaveLightbox() {
@@ -275,6 +291,8 @@
       if (dive) setDive(false);
       inLightbox = false;
       lightboxRect = null;
+      menu.classList.remove('is-tip');
+      window.clearTimeout(tipTimer);
       syncDiveUi();
       const h = homePos();
       place(h.x, h.y, { glide: !reducedMotion() });
@@ -484,9 +502,11 @@
 
     root.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
-      if ((e.target as HTMLElement).closest('.ploupe-preview-hit')) return;
+      // Menu is outside the disc; never start a drag from it.
+      if ((e.target as HTMLElement).closest('.ploupe-menu')) return;
       e.preventDefault();
       e.stopPropagation();
+      menu.classList.remove('is-tip');
       const c = centre();
       grabDX = e.clientX - c.x;
       grabDY = e.clientY - c.y;
@@ -517,9 +537,13 @@
     root.addEventListener('pointerup', end);
     root.addEventListener('pointercancel', end);
 
+    menu.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+    });
     diveBtn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      menu.classList.remove('is-tip');
       toggleDive();
     });
 
@@ -764,24 +788,88 @@
     letter-spacing: 0.2em;
   }
 
-  .ploupe-preview-hit {
+  .ploupe-menu {
     position: absolute;
-    left: 18%;
-    right: 18%;
-    bottom: 6%;
-    height: 24%;
-    z-index: 4;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    border-radius: 50% / 60%;
-    background: transparent;
-    cursor: pointer;
+    left: 50%;
+    top: calc(100% + 10px);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transform: translateX(-50%);
+    pointer-events: auto;
+    cursor: default;
   }
 
-  .ploupe-preview-hit:focus-visible {
-    outline: 2px solid #fff;
+  .ploupe-menu[hidden] {
+    display: none;
+  }
+
+  .ploupe:global(.is-held) .ploupe-menu {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ploupe-menu-tip {
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: var(--color-ink, #1a1a1a);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition:
+      opacity 0.28s ease,
+      transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.08),
+      0 8px 18px rgb(0 0 0 / 0.14);
+  }
+
+  .ploupe-menu:global(.is-tip) .ploupe-menu-tip:not([hidden]) {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .ploupe-menu-btn {
+    min-height: 28px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.92);
+    color: var(--color-ink, #1a1a1a);
+    font: 500 12px/1 var(--font-sans), 'Helvetica Neue', sans-serif;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    box-shadow:
+      0 1px 2px rgb(0 0 0 / 0.06),
+      0 6px 14px rgb(0 0 0 / 0.1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease,
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ploupe-menu-btn:hover {
+    background: #fff;
+    transform: translateY(-1px);
+  }
+
+  .ploupe-menu-btn:focus-visible {
+    outline: 2px solid var(--color-ink, #1a1a1a);
     outline-offset: 2px;
+  }
+
+  .ploupe-menu-btn[aria-pressed='true'] {
+    background: var(--color-ink, #1a1a1a);
+    color: #fff;
   }
 
   :global(html[data-view='sequence']) .ploupe,
@@ -799,7 +887,9 @@
   @media (prefers-reduced-motion: reduce) {
     .ploupe,
     .ploupe:global(.is-gliding),
-    .ploupe-scrim {
+    .ploupe-scrim,
+    .ploupe-menu-tip,
+    .ploupe-menu-btn {
       transition: none;
     }
   }
