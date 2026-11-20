@@ -1,7 +1,8 @@
 ---
 /**
  * Preview loupe — top-down disc with rubber ocular + CSS-space optical glass.
- * Optical preview is always 2×. Click PREVIEW to dive in (blackout + push closer).
+ * Optical preview is always 2×. Dive (blackout + push closer) only while the
+ * lightbox shows a large frame — click PREVIEW on the loupe.
  */
 ---
 
@@ -14,7 +15,7 @@
     class="ploupe"
     data-preview-loupe
     role="group"
-    aria-label="Lupa Preview: arrastra para ampliar. Pulsa PREVIEW para acercarte."
+    aria-label="Lupa Preview: arrastra para ampliar. Con la foto abierta, pulsa PREVIEW para acercarte."
     style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
   >
     <div class="ploupe-shadow" aria-hidden="true"></div>
@@ -51,6 +52,7 @@
         data-ploupe-preview-hit
         aria-label="Acercar lupa"
         aria-pressed="false"
+        hidden
       ></button>
     </div>
   </div>
@@ -95,6 +97,7 @@
     let grabDX = 0;
     let grabDY = 0;
     let inLightbox = false;
+    let lightboxRect: { left: number; top: number; width: number; height: number } | null = null;
     let glideTimer = 0;
     let savedPos: { x: number; y: number } | null = null;
     const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -107,6 +110,8 @@
     function syncDiveUi() {
       root.classList.toggle('is-diving', dive);
       document.documentElement.classList.toggle('ploupe-diving', dive);
+      // Dive control only while viewing a large lightbox frame.
+      diveBtn.hidden = !inLightbox;
       if (labelEl) labelEl.textContent = dive ? 'PREVIEW' : 'PREVIEW 2×';
       diveBtn.setAttribute('aria-pressed', String(dive));
       diveBtn.setAttribute('aria-label', dive ? 'Alejar lupa' : 'Acercar lupa');
@@ -141,8 +146,20 @@
       });
     }
 
+    function diveTarget() {
+      if (lightboxRect && lightboxRect.width > 48) {
+        return {
+          x: lightboxRect.left + lightboxRect.width / 2,
+          y: lightboxRect.top + lightboxRect.height / 2,
+        };
+      }
+      return { x: vw / 2, y: vh / 2 };
+    }
+
+    /** Dive only while the lightbox is open (large image). */
     function setDive(next: boolean) {
-      if (next === dive || inLightbox) return;
+      if (next === dive) return;
+      if (next && !inLightbox) return;
       if (next) {
         const c = centre();
         savedPos = { x: c.x, y: c.y };
@@ -151,7 +168,8 @@
       syncDiveUi();
       applySize();
       if (next) {
-        place(vw / 2, vh / 2, { glide: !reducedMotion(), clamp: true });
+        const t = diveTarget();
+        place(t.x, t.y, { glide: !reducedMotion(), clamp: true });
       } else if (savedPos) {
         place(savedPos.x, savedPos.y, { glide: !reducedMotion() });
         savedPos = null;
@@ -160,6 +178,7 @@
     }
 
     function toggleDive() {
+      if (!inLightbox && !dive) return;
       setDive(!dive);
     }
 
@@ -218,22 +237,24 @@
       schedule();
     }
 
+    function readLightboxRect(rect?: { left: number; top: number; width: number; height: number }) {
+      if (rect && rect.width > 48) return rect;
+      const img = document.querySelector<HTMLElement>('[data-lb-img]');
+      if (!img) return null;
+      const left = parseFloat(img.style.left);
+      const top = parseFloat(img.style.top);
+      const width = parseFloat(img.style.width);
+      const height = parseFloat(img.style.height);
+      if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
+      return { left, top, width, height };
+    }
+
     function parkOnLightbox(rect?: { left: number; top: number; width: number; height: number }) {
       if (dive) setDive(false);
       inLightbox = true;
-      const r =
-        rect && rect.width > 48
-          ? rect
-          : (() => {
-              const img = document.querySelector<HTMLElement>('[data-lb-img]');
-              if (!img) return null;
-              const left = parseFloat(img.style.left);
-              const top = parseFloat(img.style.top);
-              const width = parseFloat(img.style.width);
-              const height = parseFloat(img.style.height);
-              if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
-              return { left, top, width, height };
-            })();
+      const r = readLightboxRect(rect);
+      lightboxRect = r;
+      syncDiveUi();
 
       if (r) {
         const right = r.left + r.width;
@@ -251,7 +272,10 @@
 
     function leaveLightbox() {
       if (!inLightbox) return;
+      if (dive) setDive(false);
       inLightbox = false;
+      lightboxRect = null;
+      syncDiveUi();
       const h = homePos();
       place(h.x, h.y, { glide: !reducedMotion() });
     }
@@ -533,8 +557,10 @@
       'preview-loupe:corner',
       ((e: CustomEvent<{ corner?: string }>) => {
         if (e.detail?.corner !== 'tl') return;
-        inLightbox = false;
         if (dive) setDive(false);
+        inLightbox = false;
+        lightboxRect = null;
+        syncDiveUi();
         syncSize();
         const x = 20 + sizeCss * 0.5;
         const y = 20 + sizeCss * 0.5;
