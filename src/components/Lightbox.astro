@@ -6,11 +6,11 @@
   <div class="lb-scrim" data-lb-close></div>
   <div class="lb-stage" data-lb-stage>
     <img class="lb-img" data-lb-img alt="" decoding="async" draggable="false" />
-    <p class="lb-loading label-mono" aria-hidden="true"><span></span>Revelando…</p>
+    <p class="lb-loading label-mono" data-lb-loading><span></span>Revelando…</p>
   </div>
 
   <div class="lb-bar">
-    <div class="lb-caption">
+    <div class="lb-caption" aria-live="polite" aria-atomic="true">
       <span class="lb-count" data-lb-count>01 / 01</span>
       <span class="lb-title" data-lb-title></span>
       <span class="lb-alt" data-lb-alt></span>
@@ -48,6 +48,7 @@
   .lb {
     position: fixed;
     inset: 0;
+    overscroll-behavior: none;
     z-index: 80;
   }
 
@@ -299,5 +300,18 @@
 
   :global(html.lb-open) {
     overflow: hidden;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lb,
+    .lb-scrim,
+    .lb-bar,
+    .lb-img,
+    .lb-btn,
+    .lb-album,
+    .lb-loading span {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 </style>

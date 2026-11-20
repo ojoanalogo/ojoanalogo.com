@@ -30,9 +30,21 @@ const nextPreview = next ? (await albumWallPhotos(next)).slice(0, 3) : [];
 const rollDate = formatRollDate(album.date);
 const pad = (n: number) => String(n).padStart(2, '0');
 const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
+const socialImage = photos[0]?.full || photos[0]?.src;
+const albumDescription =
+  album.description?.trim() ||
+  `Álbum de fotografía analógica — ${album.title} · Alfonso Reyes.`;
 ---
 
-<BaseLayout title={album.title} description={album.description} active={album.slug} canvas loupe>
+<BaseLayout
+  title={album.title}
+  description={albumDescription}
+  socialImagePath={socialImage}
+  ogType="article"
+  active={album.slug}
+  canvas
+  loupe
+>
   <noscript>
     <style is:inline>
       html.is-canvas, html.is-canvas body { height: auto !important; overflow: auto !important; }
@@ -204,6 +216,7 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
 
     const setView = (view: 'wall' | 'sequence', updateUrl = true) => {
       album.dataset.view = view;
+      document.documentElement.dataset.view = view;
       document.documentElement.classList.toggle('is-canvas', view === 'wall');
       album.querySelectorAll<HTMLButtonElement>('.view-switch [data-view-set]').forEach((b) => {
         b.setAttribute('aria-pressed', String(b.dataset.viewSet === view));
@@ -277,6 +290,7 @@ const frames = (n: number) => `${pad(n)} ${n === 1 ? 'cuadro' : 'cuadros'}`;
   document.addEventListener('astro:before-swap', () => {
     cleanup?.();
     cleanup = null;
+    delete document.documentElement.dataset.view;
   });
 </script>
 

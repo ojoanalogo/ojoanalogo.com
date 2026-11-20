@@ -21,8 +21,12 @@ export interface WallOptions {
   drift?: boolean;
   /** Translate wheel/trackpad gestures into panning. */
   captureWheel?: boolean;
+  /** When false, skip pointer/keyboard open (decorative backdrop). */
+  interactive?: boolean;
   onOpen?: (photoIndex: number, rect: DOMRect, src: string) => void;
   onMove?: (x: number, y: number) => void;
+  /** Announce the frame under the focal point (screen readers). */
+  onCentre?: (photoIndex: number, alt: string) => void;
 }
 
 interface Tile {
@@ -140,8 +144,9 @@ export class ProximityWall {
   private paused = false;
   private inView = true;
   private resizeTimer = 0;
-  private readonly reduced: boolean;
+  private reduced: boolean;
   private readonly finePointer: boolean;
+  private lastCentrePhoto = -1;
 
   constructor(root: HTMLElement, photos: WallPhoto[], opts: WallOptions) {
     this.root = root;
@@ -150,7 +155,8 @@ export class ProximityWall {
     this.layer = root.querySelector<HTMLElement>('[data-wall-layer]') ?? root;
     this.cursor = root.querySelector<HTMLElement>('[data-wall-cursor]');
     this.aspects = photos.map((p) => (p.w > 0 && p.h > 0 ? p.w / p.h : 1.5));
-    this.reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    this.reduced = motionMq.matches;
     this.finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
     this.step = spreadStep(photos.length);
@@ -366,28 +372,38 @@ export class ProximityWall {
   private bind() {
     const { signal } = this.ac;
     const root = this.root;
+    const interactive = this.opts.interactive !== false;
 
-    root.addEventListener('pointerdown', (e) => this.onDown(e), { signal });
-    root.addEventListener('pointermove', (e) => this.onMove(e), { signal });
-    root.addEventListener('pointerup', (e) => this.onUp(e), { signal });
-    root.addEventListener('pointercancel', (e) => this.onUp(e), { signal });
-    root.addEventListener(
-      'pointerleave',
-      () => {
-        this.focusTarget.x = this.vw / 2;
-        this.focusTarget.y = this.vh / 2;
-        this.hideCursor();
-        this.kick();
-      },
-      { signal },
-    );
-    root.addEventListener('click', (e) => this.onClick(e), { signal });
-    root.addEventListener('keydown', (e) => this.onKey(e), { signal });
-    root.addEventListener('dragstart', (e) => e.preventDefault(), { signal });
-    root.addEventListener('focus', () => this.markCentre(true), { signal });
-    root.addEventListener('blur', () => this.markCentre(false), { signal });
+    const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onMotion = () => {
+      this.reduced = motionMq.matches;
+      this.kick();
+    };
+    motionMq.addEventListener('change', onMotion, { signal });
 
-    if (this.opts.captureWheel !== false) {
+    if (interactive) {
+      root.addEventListener('pointerdown', (e) => this.onDown(e), { signal });
+      root.addEventListener('pointermove', (e) => this.onMove(e), { signal });
+      root.addEventListener('pointerup', (e) => this.onUp(e), { signal });
+      root.addEventListener('pointercancel', (e) => this.onUp(e), { signal });
+      root.addEventListener(
+        'pointerleave',
+        () => {
+          this.focusTarget.x = this.vw / 2;
+          this.focusTarget.y = this.vh / 2;
+          this.hideCursor();
+          this.kick();
+        },
+        { signal },
+      );
+      root.addEventListener('click', (e) => this.onClick(e), { signal });
+      root.addEventListener('keydown', (e) => this.onKey(e), { signal });
+      root.addEventListener('dragstart', (e) => e.preventDefault(), { signal });
+      root.addEventListener('focus', () => this.markCentre(true), { signal });
+      root.addEventListener('blur', () => this.markCentre(false), { signal });
+    }
+
+    if (interactive && this.opts.captureWheel !== false) {
       root.addEventListener(
         'wheel',
         (e) => {
@@ -685,6 +701,15 @@ export class ProximityWall {
 
     if (this.root.matches(':focus-visible')) this.markCentre(true);
     this.opts.onMove?.(this.cur.x, this.cur.y);
+
+    if (this.opts.onCentre) {
+      const centre = this.centreTile();
+      if (centre && centre.photo >= 0 && centre.photo !== this.lastCentrePhoto) {
+        this.lastCentrePhoto = centre.photo;
+        const photo = this.photos[centre.photo];
+        this.opts.onCentre(centre.photo, photo?.alt ?? '');
+      }
+    }
 
     const planeMoving =
       Math.abs(this.target.x - this.cur.x) > 0.05 ||

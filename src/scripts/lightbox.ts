@@ -154,13 +154,18 @@ function upgrade(photo: WallPhoto, index: number) {
 /** Point the viewer at a new file; hide the stale frame until it arrives. */
 function setSrc(els: Els, src: string) {
   els.root.classList.remove('is-loading');
+  els.root.removeAttribute('aria-busy');
   if (els.img.getAttribute('src') === src && els.img.complete) return;
   allowCanvasCors(els.img, src);
   els.img.src = src;
   if (els.img.complete && els.img.naturalWidth) return;
   els.root.classList.add('is-loading');
+  els.root.setAttribute('aria-busy', 'true');
   const done = () => {
-    if (els.img.getAttribute('src') === src) els.root.classList.remove('is-loading');
+    if (els.img.getAttribute('src') === src) {
+      els.root.classList.remove('is-loading');
+      els.root.removeAttribute('aria-busy');
+    }
   };
   els.img.addEventListener('load', done, { once: true });
   els.img.addEventListener('error', done, { once: true });

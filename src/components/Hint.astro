@@ -19,7 +19,7 @@ const { label, anchor, placement = 'top', class: className } = Astro.props;
   data-hint-for={anchor}
   data-hint-placement={placement}
   hidden
-  role="status"
+  aria-hidden="true"
 >
   <span class="hint-label">{label}</span>
   <span class="hint-arrow" aria-hidden="true"></span>
