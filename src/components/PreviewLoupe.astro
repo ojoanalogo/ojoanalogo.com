@@ -420,13 +420,10 @@
     }
 
     function onInvalidate() {
+      // Coalesce with rAF — never sync-paint on every wall frame.
       dirty = true;
       lastKey = "";
-      if (raf) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-      }
-      paint();
+      schedule();
     }
 
     root.addEventListener("pointerdown", (e) => {

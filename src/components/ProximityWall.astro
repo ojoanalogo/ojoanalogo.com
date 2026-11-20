@@ -217,7 +217,6 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
   .wall-layer {
     position: absolute;
     inset: 0;
-    will-change: transform;
   }
 
   .wall-layer :global(.wall-tile) {
@@ -231,7 +230,6 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     background: rgb(26 26 26 / 0.05);
     transform: translate3d(var(--tx), var(--ty), 0) scale(var(--s, 1));
     transform-origin: center center;
-    will-change: transform;
   }
 
   .wall-layer :global(.wall-tile img) {
