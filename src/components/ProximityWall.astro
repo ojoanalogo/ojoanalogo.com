@@ -59,7 +59,6 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     )
   }
   <div class="wall-layer" data-wall-layer></div>
-  <div class="wall-cursor" data-wall-cursor aria-hidden="true"></div>
   <p class="sr-only" data-wall-live aria-live="polite" aria-atomic="true"></p>
   <script is:inline type="application/json" data-wall-data set:html={json} />
   {
@@ -206,14 +205,6 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     cursor: default;
   }
 
-  .wall:focus-visible {
-    box-shadow: inset 0 0 0 2px var(--color-ink);
-  }
-
-  .wall--decorative:focus-visible {
-    box-shadow: none;
-  }
-
   .wall-layer {
     position: absolute;
     inset: 0;
@@ -291,38 +282,6 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 0.06em;
-  }
-
-  .wall-cursor {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 44px;
-    height: 44px;
-    margin: -22px 0 0 -22px;
-    border: 1.5px solid rgb(26 26 26 / 0.35);
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    z-index: 2;
-  }
-
-  .wall-cursor::after {
-    content: '';
-    position: absolute;
-    inset: 14px;
-    border-radius: 50%;
-    background: rgb(255 255 255 / 0.14);
-  }
-
-  .wall:focus-visible .wall-cursor,
-  .wall--full:hover .wall-cursor {
-    opacity: 1;
-  }
-
-  .wall--decorative .wall-cursor {
-    display: none;
   }
 
   .wall-fallback {

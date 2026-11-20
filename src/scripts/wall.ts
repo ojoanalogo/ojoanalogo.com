@@ -97,7 +97,6 @@ export class ProximityWall {
   readonly photos: WallPhoto[];
   private readonly root: HTMLElement;
   private readonly layer: HTMLElement;
-  private readonly cursor: HTMLElement | null;
   private readonly opts: WallOptions;
   private readonly ac = new AbortController();
   private readonly ro: ResizeObserver;
@@ -122,7 +121,6 @@ export class ProximityWall {
   private target = { x: 0, y: 0 };
   private focus = { x: 0, y: 0 };
   private focusTarget = { x: 0, y: 0 };
-  private cursorPos = { x: 0, y: 0, tx: 0, ty: 0, on: false };
 
   private drag: {
     id: number;
@@ -147,7 +145,6 @@ export class ProximityWall {
   private reduced: boolean;
   private readonly finePointer: boolean;
   private lastCentrePhoto = -1;
-  private focusVisible = false;
   private lastLoupeAt = 0;
   private lastMoveAt = 0;
   private wasMoving = false;
@@ -157,7 +154,6 @@ export class ProximityWall {
     this.photos = photos;
     this.opts = opts;
     this.layer = root.querySelector<HTMLElement>('[data-wall-layer]') ?? root;
-    this.cursor = root.querySelector<HTMLElement>('[data-wall-cursor]');
     this.aspects = photos.map((p) => (p.w > 0 && p.h > 0 ? p.w / p.h : 1.5));
     const motionMq = window.matchMedia('(prefers-reduced-motion: reduce)');
     this.reduced = motionMq.matches;
@@ -395,7 +391,6 @@ export class ProximityWall {
         () => {
           this.focusTarget.x = this.vw / 2;
           this.focusTarget.y = this.vh / 2;
-          this.hideCursor();
           this.kick();
         },
         { signal },
@@ -403,22 +398,6 @@ export class ProximityWall {
       root.addEventListener('click', (e) => this.onClick(e), { signal });
       root.addEventListener('keydown', (e) => this.onKey(e), { signal });
       root.addEventListener('dragstart', (e) => e.preventDefault(), { signal });
-      root.addEventListener(
-        'focus',
-        () => {
-          this.focusVisible = root.matches(':focus-visible');
-          this.markCentre(this.focusVisible);
-        },
-        { signal },
-      );
-      root.addEventListener(
-        'blur',
-        () => {
-          this.focusVisible = false;
-          this.markCentre(false);
-        },
-        { signal },
-      );
     }
 
     if (interactive && this.opts.captureWheel !== false) {
@@ -482,7 +461,6 @@ export class ProximityWall {
         } catch {
           /* pointer already released */
         }
-        this.hideCursor();
       }
       if (d.active) {
         const dx = e.clientX - d.lx;
@@ -503,7 +481,6 @@ export class ProximityWall {
       // Keep the bloom near centre — only a light nudge toward the pointer.
       this.focusTarget.x = this.vw / 2 + (px - this.vw / 2) * 0.14;
       this.focusTarget.y = this.vh / 2 + (py - this.vh / 2) * 0.14;
-      if (!this.drag?.active) this.updateCursor(e, px, py);
     }
     this.kick();
   }
@@ -588,11 +565,6 @@ export class ProximityWall {
     return best;
   }
 
-  private markCentre(on: boolean) {
-    for (const t of this.tiles) t.el.classList.remove('is-centre');
-    if (on && this.focusVisible) this.centreTile()?.el.classList.add('is-centre');
-  }
-
   /** Loupe canvas warp is expensive — cap while flinging, sharpen on settle. */
   private notifyLoupe(force = false) {
     const now = performance.now();
@@ -600,44 +572,6 @@ export class ProximityWall {
     if (!force && now - this.lastLoupeAt < 32) return;
     this.lastLoupeAt = now;
     window.dispatchEvent(new CustomEvent('preview-loupe:invalidate'));
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Hover label                                                         */
-  /* ------------------------------------------------------------------ */
-
-  private updateCursor(e: PointerEvent, px: number, py: number) {
-    if (!this.cursor) return;
-    const tileEl = (e.target as Element | null)?.closest<HTMLElement>('.wall-tile');
-    const photo = tileEl ? this.photos[Number(tileEl.dataset.photo)] : undefined;
-    if (!photo) return this.hideCursor();
-
-    const label = photo.album?.title ?? photo.alt;
-    const index = String(Number(tileEl?.dataset.photo) + 1).padStart(2, '0');
-    if (this.cursor.dataset.key !== `${index}`) {
-      this.cursor.dataset.key = index;
-      this.cursor.innerHTML = '';
-      const num = document.createElement('span');
-      num.className = 'wall-cursor-num';
-      num.textContent = index;
-      const text = document.createElement('span');
-      text.textContent = label;
-      this.cursor.append(num, text);
-    }
-    this.cursorPos.tx = px;
-    this.cursorPos.ty = py;
-    if (!this.cursorPos.on) {
-      this.cursorPos.x = px;
-      this.cursorPos.y = py;
-      this.cursorPos.on = true;
-      this.cursor.classList.add('is-on');
-    }
-  }
-
-  private hideCursor() {
-    if (!this.cursor || !this.cursorPos.on) return;
-    this.cursorPos.on = false;
-    this.cursor.classList.remove('is-on');
   }
 
   /* ------------------------------------------------------------------ */
@@ -719,15 +653,6 @@ export class ProximityWall {
       for (const t of this.tiles) t.el.style.removeProperty('opacity');
     }
 
-    if (this.cursor && this.cursorPos.on) {
-      const ca = ease(0.25);
-      this.cursorPos.x += (this.cursorPos.tx - this.cursorPos.x) * ca;
-      this.cursorPos.y += (this.cursorPos.ty - this.cursorPos.y) * ca;
-      this.cursor.style.transform = `translate3d(${this.cursorPos.x + 16}px, ${this.cursorPos.y + 18}px, 0)`;
-    }
-
-    if (this.focusVisible) this.markCentre(true);
-
     const planeMoving =
       Math.abs(this.target.x - this.cur.x) > 0.05 ||
       Math.abs(this.target.y - this.cur.y) > 0.05 ||
@@ -736,11 +661,7 @@ export class ProximityWall {
     const focusMoving =
       Math.abs(this.focusTarget.x - this.focus.x) > 0.1 ||
       Math.abs(this.focusTarget.y - this.focus.y) > 0.1;
-    const cursorMoving =
-      this.cursorPos.on &&
-      (Math.abs(this.cursorPos.tx - this.cursorPos.x) > 0.1 ||
-        Math.abs(this.cursorPos.ty - this.cursorPos.y) > 0.1);
-    const moving = planeMoving || focusMoving || cursorMoving;
+    const moving = planeMoving || focusMoving;
 
     // HUD coords ~10 Hz while moving.
     if (this.opts.onMove && (!moving || now - this.lastMoveAt > 100)) {
