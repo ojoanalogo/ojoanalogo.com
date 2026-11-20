@@ -1,7 +1,7 @@
 ---
 /**
  * Preview loupe — top-down disc with rubber ocular + CSS-space optical glass.
- * Zoom is always 2× for now; 5× dial/wheel stays behind ZOOM_5X_ENABLED.
+ * 2× / 5× via dial (PREVIEW engraving) or wheel.
  */
 ---
 
@@ -9,8 +9,8 @@
   class="ploupe"
   data-preview-loupe
   role="group"
-  aria-label="Lupa Preview: arrastra para ampliar a 2×"
-  data-zoom-5x="off"
+  aria-label="Lupa Preview: arrastra para ampliar; elige 2× o 5×"
+  data-zoom-5x="on"
   style="--pl-x: 0px; --pl-y: 0px; --pl-size: 168px"
 >
   <div class="ploupe-shadow" aria-hidden="true"></div>
@@ -72,8 +72,7 @@
     const blit = document.createElement("canvas");
     const blitCtx = blit.getContext("2d")!;
 
-    /** Flip to true to restore 5× + dial / wheel switching. */
-    const ZOOM_5X_ENABLED = false;
+    const ZOOM_5X_ENABLED = true;
     type ZoomMode = 2 | 5;
     const WARP = 128;
     const IOR = 0.24;
@@ -464,7 +463,7 @@
     root.addEventListener("pointerup", end);
     root.addEventListener("pointercancel", end);
 
-    // ——— 5× mode (dormant while ZOOM_5X_ENABLED is false) ———
+    // ——— 2× / 5× dial + wheel ———
     root.addEventListener(
       "wheel",
       (e) => {
