@@ -147,6 +147,10 @@ export class ProximityWall {
   private reduced: boolean;
   private readonly finePointer: boolean;
   private lastCentrePhoto = -1;
+  private focusVisible = false;
+  private lastLoupeAt = 0;
+  private lastMoveAt = 0;
+  private wasMoving = false;
 
   constructor(root: HTMLElement, photos: WallPhoto[], opts: WallOptions) {
     this.root = root;
@@ -399,8 +403,22 @@ export class ProximityWall {
       root.addEventListener('click', (e) => this.onClick(e), { signal });
       root.addEventListener('keydown', (e) => this.onKey(e), { signal });
       root.addEventListener('dragstart', (e) => e.preventDefault(), { signal });
-      root.addEventListener('focus', () => this.markCentre(true), { signal });
-      root.addEventListener('blur', () => this.markCentre(false), { signal });
+      root.addEventListener(
+        'focus',
+        () => {
+          this.focusVisible = root.matches(':focus-visible');
+          this.markCentre(this.focusVisible);
+        },
+        { signal },
+      );
+      root.addEventListener(
+        'blur',
+        () => {
+          this.focusVisible = false;
+          this.markCentre(false);
+        },
+        { signal },
+      );
     }
 
     if (interactive && this.opts.captureWheel !== false) {
@@ -572,7 +590,16 @@ export class ProximityWall {
 
   private markCentre(on: boolean) {
     for (const t of this.tiles) t.el.classList.remove('is-centre');
-    if (on && this.root.matches(':focus-visible')) this.centreTile()?.el.classList.add('is-centre');
+    if (on && this.focusVisible) this.centreTile()?.el.classList.add('is-centre');
+  }
+
+  /** Loupe canvas warp is expensive — cap while flinging, sharpen on settle. */
+  private notifyLoupe(force = false) {
+    const now = performance.now();
+    // ~30 Hz while moving (was ~15 Hz); settle always forces a final paint.
+    if (!force && now - this.lastLoupeAt < 32) return;
+    this.lastLoupeAt = now;
+    window.dispatchEvent(new CustomEvent('preview-loupe:invalidate'));
   }
 
   /* ------------------------------------------------------------------ */
@@ -699,17 +726,7 @@ export class ProximityWall {
       this.cursor.style.transform = `translate3d(${this.cursorPos.x + 16}px, ${this.cursorPos.y + 18}px, 0)`;
     }
 
-    if (this.root.matches(':focus-visible')) this.markCentre(true);
-    this.opts.onMove?.(this.cur.x, this.cur.y);
-
-    if (this.opts.onCentre) {
-      const centre = this.centreTile();
-      if (centre && centre.photo >= 0 && centre.photo !== this.lastCentrePhoto) {
-        this.lastCentrePhoto = centre.photo;
-        const photo = this.photos[centre.photo];
-        this.opts.onCentre(centre.photo, photo?.alt ?? '');
-      }
-    }
+    if (this.focusVisible) this.markCentre(true);
 
     const planeMoving =
       Math.abs(this.target.x - this.cur.x) > 0.05 ||
@@ -725,9 +742,28 @@ export class ProximityWall {
         Math.abs(this.cursorPos.ty - this.cursorPos.y) > 0.1);
     const moving = planeMoving || focusMoving || cursorMoving;
 
-    // Loupe tracks plane + focus bloom; cursor jitter alone does not refresh it.
+    // HUD coords ~10 Hz while moving.
+    if (this.opts.onMove && (!moving || now - this.lastMoveAt > 100)) {
+      this.lastMoveAt = now;
+      this.opts.onMove(this.cur.x, this.cur.y);
+    }
+
+    if (this.opts.onCentre) {
+      const centre = this.centreTile();
+      if (centre && centre.photo >= 0 && centre.photo !== this.lastCentrePhoto) {
+        this.lastCentrePhoto = centre.photo;
+        const photo = this.photos[centre.photo];
+        this.opts.onCentre(centre.photo, photo?.alt ?? '');
+      }
+    }
+
+    // Loupe: sparse samples during motion, one sharp refresh on settle.
     if (planeMoving || focusMoving) {
-      window.dispatchEvent(new CustomEvent('preview-loupe:invalidate'));
+      this.notifyLoupe(false);
+      this.wasMoving = true;
+    } else if (this.wasMoving) {
+      this.wasMoving = false;
+      this.notifyLoupe(true);
     }
 
     if (moving || drifting || !this.introDone || this.drag?.active) {
