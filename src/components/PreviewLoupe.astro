@@ -78,8 +78,9 @@
     const GLASS_FRAC = 0.56;
     const OPTICAL = 2;
     /** Extra sample push while diving (label stays 2×). */
-    const DIVE_PUSH = 1.75;
-    const DIVE_SIZE = 1.65;
+    /** Extra sample push while diving (half of the previous 1.75). */
+    const DIVE_PUSH = 1.375;
+    const DIVE_SIZE = 1.325;
 
     let dive = false;
     let diveVis = 1;
@@ -611,7 +612,7 @@
     position: fixed;
     inset: 0;
     z-index: 85;
-    background: rgb(8 6 4 / 0.52);
+    background: rgb(4 3 2 / 0.78);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1);
@@ -773,7 +774,7 @@
   .ploupe-zoom {
     position: absolute;
     left: 50%;
-    top: calc(100% - 2px);
+    top: calc(100% + 2px);
     z-index: 5;
     transform: translateX(-50%);
     pointer-events: none;
