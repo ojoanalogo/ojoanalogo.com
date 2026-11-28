@@ -48,12 +48,18 @@
       data-ploupe-preview-hit
       aria-label="Mostrar selector de aumento"
       aria-controls="ploupe-dial"
-      hidden
-    ></button>
+      hidden></button>
   </div>
 
   <!-- 5× mode: zoom dial (hidden while disabled) -->
-  <div class="ploupe-dial" id="ploupe-dial" role="group" aria-label="Aumento" data-ploupe-dial hidden>
+  <div
+    class="ploupe-dial"
+    id="ploupe-dial"
+    role="group"
+    aria-label="Aumento"
+    data-ploupe-dial
+    hidden
+  >
     <span class="ploupe-dial-thumb" data-zoom-thumb aria-hidden="true"></span>
     <button type="button" class="ploupe-dial-btn" data-zoom-set="2" aria-pressed="true">2×</button>
     <button type="button" class="ploupe-dial-btn" data-zoom-set="5" aria-pressed="false">5×</button>
@@ -62,15 +68,15 @@
 
 <script>
   function initPreviewLoupe(root: HTMLElement) {
-    const canvas = root.querySelector<HTMLCanvasElement>("[data-ploupe-glass]")!;
-    const ctx = canvas.getContext("2d", { alpha: true })!;
-    const labelEl = root.querySelector<SVGTextPathElement>("[data-ploupe-label]")!;
-    const dialBtns = [...root.querySelectorAll<HTMLButtonElement>("[data-zoom-set]")];
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-ploupe-glass]')!;
+    const ctx = canvas.getContext('2d', { alpha: true })!;
+    const labelEl = root.querySelector<SVGTextPathElement>('[data-ploupe-label]')!;
+    const dialBtns = [...root.querySelectorAll<HTMLButtonElement>('[data-zoom-set]')];
 
-    const plate = document.createElement("canvas");
-    const plateCtx = plate.getContext("2d", { willReadFrequently: true })!;
-    const blit = document.createElement("canvas");
-    const blitCtx = blit.getContext("2d")!;
+    const plate = document.createElement('canvas');
+    const plateCtx = plate.getContext('2d', { willReadFrequently: true })!;
+    const blit = document.createElement('canvas');
+    const blitCtx = blit.getContext('2d')!;
 
     /** Flip to true to restore 5× + dial / wheel switching. */
     const ZOOM_5X_ENABLED = false;
@@ -88,7 +94,7 @@
     let dirty = true;
     let warpSize = 0;
     let outBuf: ImageData | null = null;
-    let lastKey = "";
+    let lastKey = '';
     let raf = 0;
     let vw = window.innerWidth;
     let vh = window.innerHeight;
@@ -96,18 +102,18 @@
     let grabDY = 0;
     let inLightbox = false;
     let glideTimer = 0;
-    const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const fallBack =
-      getComputedStyle(document.documentElement).getPropertyValue("--color-paper").trim() ||
+      getComputedStyle(document.documentElement).getPropertyValue('--color-paper').trim() ||
       getComputedStyle(document.body).backgroundColor ||
-      "#f5f5f5";
+      '#f5f5f5';
 
     function syncZoomUi() {
       if (labelEl) labelEl.textContent = `PREVIEW ${zoom}×`;
       root.dataset.zoom = String(zoom);
       for (const btn of dialBtns) {
-        btn.setAttribute("aria-pressed", String(btn.dataset.zoomSet === String(zoom)));
+        btn.setAttribute('aria-pressed', String(btn.dataset.zoomSet === String(zoom)));
       }
     }
 
@@ -130,7 +136,7 @@
           tickZoom();
         }
         dirty = true;
-        lastKey = "";
+        lastKey = '';
         schedule();
       });
     }
@@ -138,14 +144,14 @@
     function centre() {
       const h = homePos();
       return {
-        x: parseFloat(root.style.getPropertyValue("--pl-x")) || h.x,
-        y: parseFloat(root.style.getPropertyValue("--pl-y")) || h.y,
+        x: parseFloat(root.style.getPropertyValue('--pl-x')) || h.x,
+        y: parseFloat(root.style.getPropertyValue('--pl-y')) || h.y,
       };
     }
 
     /** Rest above the “Arrastra para explorar” HUD chip when present. */
     function homePos() {
-      const hud = document.querySelector("[data-wall-coords]")?.closest(".chip");
+      const hud = document.querySelector('[data-wall-coords]')?.closest('.chip');
       if (hud) {
         const r = hud.getBoundingClientRect();
         // During ClientRouter swaps the chip can briefly report 0×0 → (0,0).
@@ -180,14 +186,14 @@
         y = Math.max(pad, Math.min(vh - pad, y));
       }
       if (glide && !reducedMotion()) {
-        root.classList.add("is-gliding");
+        root.classList.add('is-gliding');
         window.clearTimeout(glideTimer);
-        glideTimer = window.setTimeout(() => root.classList.remove("is-gliding"), 560);
+        glideTimer = window.setTimeout(() => root.classList.remove('is-gliding'), 560);
       } else {
-        root.classList.remove("is-gliding");
+        root.classList.remove('is-gliding');
       }
-      root.style.setProperty("--pl-x", `${x}px`);
-      root.style.setProperty("--pl-y", `${y}px`);
+      root.style.setProperty('--pl-x', `${x}px`);
+      root.style.setProperty('--pl-y', `${y}px`);
       dirty = true;
       schedule();
     }
@@ -204,13 +210,14 @@
           ? rect
           : (() => {
               // Fallback: read target layout from inline styles (ignores FLIP transform).
-              const img = document.querySelector<HTMLElement>("[data-lb-img]");
+              const img = document.querySelector<HTMLElement>('[data-lb-img]');
               if (!img) return null;
               const left = parseFloat(img.style.left);
               const top = parseFloat(img.style.top);
               const width = parseFloat(img.style.width);
               const height = parseFloat(img.style.height);
-              if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0)) return null;
+              if (![left, top, width, height].every((n) => Number.isFinite(n) && n > 0))
+                return null;
               return { left, top, width, height };
             })();
 
@@ -242,7 +249,7 @@
       vw = window.innerWidth;
       vh = window.innerHeight;
       sizeCss = Math.min(180, Math.max(140, Math.round(vw * 0.14)));
-      root.style.setProperty("--pl-size", `${sizeCss}px`);
+      root.style.setProperty('--pl-size', `${sizeCss}px`);
       const dpr = Math.min(2, window.devicePixelRatio || 1);
       const px = Math.round(sizeCss * GLASS_FRAC * dpr);
       if (canvas.width !== px) {
@@ -259,13 +266,13 @@
     }
 
     function imgUnder(cx: number, cy: number): HTMLImageElement | null {
-      root.style.pointerEvents = "none";
+      root.style.pointerEvents = 'none';
       const stack = document.elementsFromPoint(cx, cy);
-      root.style.pointerEvents = "";
+      root.style.pointerEvents = '';
       for (const el of stack) {
         if (el instanceof HTMLImageElement && el.naturalWidth > 0) return el;
         if (el instanceof HTMLElement) {
-          const img = el.querySelector("img");
+          const img = el.querySelector('img');
           if (img?.naturalWidth) return img;
         }
       }
@@ -373,21 +380,21 @@
       ctx.clip();
       blitCtx.putImageData(outBuf!, 0, 0);
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(blit, 0, 0, size, size);
 
       const vig = ctx.createRadialGradient(R * 0.7, R * 0.58, R * 0.12, R, R, R);
-      vig.addColorStop(0, "rgba(255,255,255,0.12)");
-      vig.addColorStop(0.5, "rgba(255,255,255,0)");
-      vig.addColorStop(1, "rgba(18,16,12,0.22)");
+      vig.addColorStop(0, 'rgba(255,255,255,0.12)');
+      vig.addColorStop(0.5, 'rgba(255,255,255,0)');
+      vig.addColorStop(1, 'rgba(18,16,12,0.22)');
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, size, size);
       ctx.restore();
     }
 
     function paint() {
-      if (document.documentElement.dataset.view === "sequence") return;
-      if (document.visibilityState !== "visible") return;
+      if (document.documentElement.dataset.view === 'sequence') return;
+      if (document.visibilityState !== 'visible') return;
       if (!dirty && !dragging) return;
 
       const { x: cx, y: cy } = centre();
@@ -398,9 +405,9 @@
         glassCss() | 0,
         cx | 0,
         cy | 0,
-        img?.currentSrc ?? "",
-        rect ? `${rect.left | 0},${rect.top | 0},${rect.width | 0}` : "",
-      ].join("|");
+        img?.currentSrc ?? '',
+        rect ? `${rect.left | 0},${rect.top | 0},${rect.width | 0}` : '',
+      ].join('|');
 
       if (!dragging && key === lastKey) {
         dirty = false;
@@ -422,13 +429,13 @@
     function onInvalidate() {
       // Coalesce with rAF — never sync-paint on every wall frame.
       dirty = true;
-      lastKey = "";
+      lastKey = '';
       schedule();
     }
 
-    root.addEventListener("pointerdown", (e) => {
+    root.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
-      if ((e.target as HTMLElement).closest(".ploupe-dial, .ploupe-preview-hit")) return;
+      if ((e.target as HTMLElement).closest('.ploupe-dial, .ploupe-preview-hit')) return;
       e.preventDefault();
       e.stopPropagation();
       const c = centre();
@@ -436,12 +443,12 @@
       grabDY = e.clientY - c.y;
       dragging = true;
       dirty = true;
-      root.classList.add("is-held");
-      root.classList.remove("is-gliding");
+      root.classList.add('is-held');
+      root.classList.remove('is-gliding');
       root.setPointerCapture(e.pointerId);
       schedule();
     });
-    root.addEventListener("pointermove", (e) => {
+    root.addEventListener('pointermove', (e) => {
       if (!dragging) return;
       e.preventDefault();
       place(e.clientX - grabDX, e.clientY - grabDY);
@@ -449,7 +456,7 @@
     const end = (e: PointerEvent) => {
       if (!dragging) return;
       dragging = false;
-      root.classList.remove("is-held");
+      root.classList.remove('is-held');
       dirty = true;
       schedule();
       try {
@@ -458,12 +465,12 @@
         /* ok */
       }
     };
-    root.addEventListener("pointerup", end);
-    root.addEventListener("pointercancel", end);
+    root.addEventListener('pointerup', end);
+    root.addEventListener('pointercancel', end);
 
     // ——— 5× mode (dormant while ZOOM_5X_ENABLED is false) ———
     root.addEventListener(
-      "wheel",
+      'wheel',
       (e) => {
         if (!ZOOM_5X_ENABLED) return;
         e.preventDefault();
@@ -473,20 +480,20 @@
       },
       { passive: false },
     );
-    root.addEventListener("click", (e) => {
+    root.addEventListener('click', (e) => {
       if (!ZOOM_5X_ENABLED) return;
-      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-zoom-set]");
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-zoom-set]');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      setZoom(btn.dataset.zoomSet === "2" ? 2 : 5);
+      setZoom(btn.dataset.zoomSet === '2' ? 2 : 5);
     });
 
     syncZoomUi();
     if (ZOOM_5X_ENABLED) {
-      root.querySelector<HTMLElement>("[data-ploupe-preview-hit]")?.removeAttribute("hidden");
-      root.querySelector<HTMLElement>("[data-ploupe-dial]")?.removeAttribute("hidden");
-      root.dataset.zoom5x = "on";
+      root.querySelector<HTMLElement>('[data-ploupe-preview-hit]')?.removeAttribute('hidden');
+      root.querySelector<HTMLElement>('[data-ploupe-dial]')?.removeAttribute('hidden');
+      root.dataset.zoom5x = 'on';
     }
 
     const onViewport = () => {
@@ -494,32 +501,31 @@
       const c = centre();
       place(c.x, c.y);
     };
-    window.addEventListener("resize", onViewport);
-    window.visualViewport?.addEventListener("resize", onViewport);
-    window.visualViewport?.addEventListener("scroll", onInvalidate);
-    window.addEventListener("scroll", onInvalidate, true);
-    window.addEventListener("preview-loupe:invalidate", onInvalidate);
-    window.addEventListener(
-      "preview-loupe:lightbox",
-      ((e: CustomEvent<{ open: boolean; rect?: { left: number; top: number; width: number; height: number } }>) => {
-        if (e.detail?.open) parkOnLightbox(e.detail.rect);
-        else leaveLightbox();
-      }) as EventListener,
-    );
-    window.addEventListener(
-      "preview-loupe:corner",
-      ((e: CustomEvent<{ corner?: string }>) => {
-        if (e.detail?.corner !== "tl") return;
-        inLightbox = false;
-        syncSize();
-        // Top-left of the viewport, clear of the centered nav pill.
-        const x = 20 + sizeCss * 0.5;
-        const y = 20 + sizeCss * 0.5;
-        place(x, y, { glide: true });
-        onInvalidate();
-      }) as EventListener,
-    );
-    window.addEventListener("lt:view", () => {
+    window.addEventListener('resize', onViewport);
+    window.visualViewport?.addEventListener('resize', onViewport);
+    window.visualViewport?.addEventListener('scroll', onInvalidate);
+    window.addEventListener('scroll', onInvalidate, true);
+    window.addEventListener('preview-loupe:invalidate', onInvalidate);
+    window.addEventListener('preview-loupe:lightbox', ((
+      e: CustomEvent<{
+        open: boolean;
+        rect?: { left: number; top: number; width: number; height: number };
+      }>,
+    ) => {
+      if (e.detail?.open) parkOnLightbox(e.detail.rect);
+      else leaveLightbox();
+    }) as EventListener);
+    window.addEventListener('preview-loupe:corner', ((e: CustomEvent<{ corner?: string }>) => {
+      if (e.detail?.corner !== 'tl') return;
+      inLightbox = false;
+      syncSize();
+      // Top-left of the viewport, clear of the centered nav pill.
+      const x = 20 + sizeCss * 0.5;
+      const y = 20 + sizeCss * 0.5;
+      place(x, y, { glide: true });
+      onInvalidate();
+    }) as EventListener);
+    window.addEventListener('lt:view', () => {
       dirty = true;
       schedule();
     });
@@ -527,26 +533,26 @@
     // Soft nav / view transitions: re-home once the new page finishes swapping.
     const onPageLoad = () => {
       if (!document.contains(root)) {
-        window.removeEventListener("astro:page-load", onPageLoad);
+        window.removeEventListener('astro:page-load', onPageLoad);
         return;
       }
       inLightbox = false;
       goHome(false);
     };
-    window.addEventListener("astro:page-load", onPageLoad);
+    window.addEventListener('astro:page-load', onPageLoad);
 
     goHome(false);
   }
 
   const booted = new WeakSet<HTMLElement>();
   function boot() {
-    const el = document.querySelector<HTMLElement>("[data-preview-loupe]");
+    const el = document.querySelector<HTMLElement>('[data-preview-loupe]');
     if (!el || booted.has(el)) return;
     booted.add(el);
     initPreviewLoupe(el);
   }
   boot();
-  document.addEventListener("astro:page-load", boot);
+  document.addEventListener('astro:page-load', boot);
 </script>
 
 <style>
@@ -617,7 +623,11 @@
     inset: 0;
     border-radius: 50%;
     pointer-events: none;
-    background: radial-gradient(ellipse 55% 35% at 34% 26%, rgba(255, 255, 255, 0.45), transparent 62%);
+    background: radial-gradient(
+      ellipse 55% 35% at 34% 26%,
+      rgba(255, 255, 255, 0.45),
+      transparent 62%
+    );
     -webkit-mask: radial-gradient(farthest-side, transparent 52%, #000 53.5%);
     mask: radial-gradient(farthest-side, transparent 52%, #000 53.5%);
     mix-blend-mode: screen;
@@ -683,7 +693,12 @@
 
   .ploupe-mark text {
     fill: #9a9a9a;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      'Helvetica Neue',
+      sans-serif;
     font-size: 4.4px;
     font-weight: 500;
     letter-spacing: 0.2em;
@@ -728,17 +743,17 @@
       transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:hover) .ploupe-dial,
-  .ploupe[data-zoom-5x="on"]:has(.ploupe-preview-hit:focus-visible) .ploupe-dial,
-  .ploupe[data-zoom-5x="on"] .ploupe-dial:hover,
-  .ploupe[data-zoom-5x="on"] .ploupe-dial:focus-within {
+  .ploupe[data-zoom-5x='on']:has(.ploupe-preview-hit:hover) .ploupe-dial,
+  .ploupe[data-zoom-5x='on']:has(.ploupe-preview-hit:focus-visible) .ploupe-dial,
+  .ploupe[data-zoom-5x='on'] .ploupe-dial:hover,
+  .ploupe[data-zoom-5x='on'] .ploupe-dial:focus-within {
     opacity: 1;
     pointer-events: auto;
     transform: translateX(-50%) translateY(0);
   }
 
   @media (hover: none) {
-    .ploupe[data-zoom-5x="on"] .ploupe-dial:not([hidden]) {
+    .ploupe[data-zoom-5x='on'] .ploupe-dial:not([hidden]) {
       opacity: 1;
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
@@ -757,7 +772,7 @@
     pointer-events: none;
   }
 
-  .ploupe[data-zoom="5"] .ploupe-dial-thumb {
+  .ploupe[data-zoom='5'] .ploupe-dial-thumb {
     transform: translateX(calc(100% + 2px));
   }
 
@@ -771,13 +786,16 @@
     border-radius: 999px;
     background: transparent;
     color: var(--color-mute, #8a8a8a);
-    font: 400 11px/1 var(--font-sans), "Helvetica Neue", sans-serif;
+    font:
+      400 11px/1 var(--font-sans),
+      'Helvetica Neue',
+      sans-serif;
     letter-spacing: 0.02em;
     cursor: pointer;
     transition: color 0.28s ease;
   }
 
-  .ploupe-dial-btn[aria-pressed="true"] {
+  .ploupe-dial-btn[aria-pressed='true'] {
     color: #fff;
   }
 

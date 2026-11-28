@@ -9,7 +9,7 @@ export interface Props {
   size?: number;
 }
 
-const { class: className = "", size = 18 } = Astro.props;
+const { class: className = '', size = 18 } = Astro.props;
 
 const R = 8; // barrel radius
 const r = 3.1; // aperture (inner hexagon) radius
@@ -36,7 +36,7 @@ const lines = Array.from({ length: blades }, (_, k) => {
 ---
 
 <svg
-  class:list={["mark", className]}
+  class:list={['mark', className]}
   width={size}
   height={size}
   viewBox="-9 -9 18 18"
@@ -46,7 +46,7 @@ const lines = Array.from({ length: blades }, (_, k) => {
   stroke-linecap="round"
   aria-hidden="true"
 >
-  <circle r={R} />
+  <circle r={R}></circle>
   <g class="mark-blades">
     {lines.map((l) => <line {...l} />)}
   </g>

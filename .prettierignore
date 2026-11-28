@@ -1,0 +1,7 @@
+# Ignore generated/build output and lockfiles
+dist/
+.astro/
+node_modules/
+pnpm-lock.yaml
+test-results/
+playwright-report/

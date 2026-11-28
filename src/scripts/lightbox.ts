@@ -212,10 +212,11 @@ function show(index: number, opts: OpenOptions = {}) {
 }
 
 /** Resolve when an animation ends — or is cancelled — without throwing. */
-const settle = (a: Animation) => a.finished.then(
-  () => undefined,
-  () => undefined,
-);
+const settle = (a: Animation) =>
+  a.finished.then(
+    () => undefined,
+    () => undefined,
+  );
 
 async function go(delta: number) {
   if (!state || state.busy || state.photos.length < 2) return;
@@ -257,9 +258,9 @@ async function go(delta: number) {
 }
 
 function trapFocus(e: KeyboardEvent, root: HTMLElement) {
-  const focusables = [...root.querySelectorAll<HTMLElement>('button:not([hidden]), a[href]:not([hidden])')].filter(
-    (el) => el.offsetParent !== null,
-  );
+  const focusables = [
+    ...root.querySelectorAll<HTMLElement>('button:not([hidden]), a[href]:not([hidden])'),
+  ].filter((el) => el.offsetParent !== null);
   if (!focusables.length) return;
   const first = focusables[0];
   const last = focusables[focusables.length - 1];
@@ -328,9 +329,9 @@ export function openLightbox(photos: WallPhoto[], index: number, opts: OpenOptio
   const { signal } = ac;
   els.prev.addEventListener('click', () => go(-1), { signal });
   els.next.addEventListener('click', () => go(1), { signal });
-  els.root.querySelectorAll('[data-lb-close]').forEach((el) =>
-    el.addEventListener('click', () => closeLightbox(), { signal }),
-  );
+  els.root
+    .querySelectorAll('[data-lb-close]')
+    .forEach((el) => el.addEventListener('click', () => closeLightbox(), { signal }));
   document.addEventListener(
     'keydown',
     (e) => {
