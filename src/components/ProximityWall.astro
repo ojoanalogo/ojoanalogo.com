@@ -116,9 +116,10 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
 
       const decorative = root.dataset.decorative === 'true';
       const variant = root.dataset.variant === 'contained' ? 'contained' : 'full';
-      const coords = !decorative && variant === 'full'
-        ? document.querySelector<HTMLElement>('[data-wall-coords]')
-        : null;
+      const coords =
+        !decorative && variant === 'full'
+          ? document.querySelector<HTMLElement>('[data-wall-coords]')
+          : null;
       const live = root.querySelector<HTMLElement>('[data-wall-live]');
       let lastCoords = '';
       let lastLive = '';
@@ -141,14 +142,15 @@ const hintId = `wall-hint-${Math.random().toString(36).slice(2, 8)}`;
                 }
               }
             : undefined,
-          onCentre: !decorative && live
-            ? (index, alt) => {
-                const text = `Centro: ${String(index + 1).padStart(2, '0')} — ${alt}`;
-                if (text === lastLive) return;
-                lastLive = text;
-                live.textContent = text;
-              }
-            : undefined,
+          onCentre:
+            !decorative && live
+              ? (index, alt) => {
+                  const text = `Centro: ${String(index + 1).padStart(2, '0')} — ${alt}`;
+                  if (text === lastLive) return;
+                  lastLive = text;
+                  live.textContent = text;
+                }
+              : undefined,
         }),
       );
     });

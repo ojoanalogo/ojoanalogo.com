@@ -70,7 +70,12 @@ const nextIndex = () => i++;
               </a>
             </li>
             <li style={`--i:${nextIndex()}`}>
-              <a href="https://alfon.so" target="_blank" rel="noreferrer" aria-label="Mi otro yo (abre alfon.so en otra pestaña)">
+              <a
+                href="https://alfon.so"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Mi otro yo (abre alfon.so en otra pestaña)"
+              >
                 <span>Mi otro yo</span>
                 <span class="pill-meta pill-meta--glyph" aria-hidden="true">↗</span>
               </a>
@@ -158,9 +163,7 @@ const nextIndex = () => i++;
         e.preventDefault();
         e.stopPropagation();
         if (!document.querySelector('[data-preview-loupe]')) return;
-        window.dispatchEvent(
-          new CustomEvent('preview-loupe:corner', { detail: { corner: 'tl' } }),
-        );
+        window.dispatchEvent(new CustomEvent('preview-loupe:corner', { detail: { corner: 'tl' } }));
       });
     });
   }

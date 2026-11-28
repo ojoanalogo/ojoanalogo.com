@@ -1,7 +1,7 @@
 ---
-title: "Narnia"
-description: ""
-slug: "narnia"
+title: 'Narnia'
+description: ''
+slug: 'narnia'
 date: 2023-08-18
 ---
 

@@ -590,7 +590,8 @@ export class ProximityWall {
     this.lastT = now;
     const ease = (base: number) => (this.reduced ? 1 : 1 - Math.pow(1 - base, dt / 16.667));
 
-    const drifting = !!this.opts.drift && !this.reduced && this.inView && !this.drag && !document.hidden;
+    const drifting =
+      !!this.opts.drift && !this.reduced && this.inView && !this.drag && !document.hidden;
     if (drifting) {
       this.target.x -= 0.018 * dt;
       this.target.y -= 0.006 * dt;
@@ -622,7 +623,8 @@ export class ProximityWall {
       if (vc !== t.vc || vr !== t.vr) this.assign(t, vc, vr);
 
       const dist = Math.hypot(sx - this.focus.x, sy - this.focus.y) / this.halfDiag;
-      let s = MIN_SCALE + (MAX_SCALE - MIN_SCALE) * smoothstep(clamp(1 - (dist - 0.12) / 0.88, 0, 1));
+      let s =
+        MIN_SCALE + (MAX_SCALE - MIN_SCALE) * smoothstep(clamp(1 - (dist - 0.12) / 0.88, 0, 1));
 
       if (!this.introDone) {
         const p = clamp((introT - t.delay) / INTRO_MS, 0, 1);

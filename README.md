@@ -18,10 +18,10 @@ CMS (prod): [https://ojoanalogo.com/admin/](https://ojoanalogo.com/admin/)
 
 There is no separate “photo database.”
 
-| What | Where |
-| --- | --- |
-| **Photo files** | Cloudflare **R2** (`media.ojoanalogo.com`) |
-| **Catalog** (which photos, album titles, landing order) | **Git** — JSON / Markdown in this repo |
+| What                                                    | Where                                      |
+| ------------------------------------------------------- | ------------------------------------------ |
+| **Photo files**                                         | Cloudflare **R2** (`media.ojoanalogo.com`) |
+| **Catalog** (which photos, album titles, landing order) | **Git** — JSON / Markdown in this repo     |
 
 When you save in the CMS:
 
